@@ -1,6 +1,6 @@
 # github-backup
 
-An embarrassing simple Github repo backup tool
+Embarrassing simple Github backup tool
 
     Usage: github-backup user backupdir
 

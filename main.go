@@ -22,6 +22,8 @@ type Repo struct {
 	GitUrl string `json:"git_url"`
 }
 
+var batchSize = 10
+
 func main() {
 	user, backupDir := parseArgs()
 
@@ -29,15 +31,26 @@ func main() {
 
 	fmt.Println("Backup for user", user, "with", len(repos), "repositories")
 
-	var wg sync.WaitGroup
-	for _, repo := range repos {
-		wg.Add(1)
-		go func(routineRepo Repo) {
-			defer wg.Done()
-			updateRepo(backupDir, routineRepo)
-		}(repo)
+	batches := len(repos)/batchSize + 1
+	for b := 0; b < batches; b++ {
+		batchEnd := (b + 1) * batchSize
+		if batchEnd >= len(repos) {
+			batchEnd = len(repos)
+		}
+		batch := repos[b*batchSize : batchEnd]
+
+		func() {
+			var wg sync.WaitGroup
+			for _, repo := range batch {
+				wg.Add(1)
+				go func(routineRepo Repo) {
+					defer wg.Done()
+					updateRepo(backupDir, routineRepo)
+				}(repo)
+			}
+			wg.Wait()
+		}()
 	}
-	wg.Wait()
 }
 
 // Get the two positional arguments user and backupdir
