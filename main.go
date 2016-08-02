@@ -64,7 +64,7 @@ func getRepos(url string) []Repo {
 	defer r.Body.Close()
 
 	if r.StatusCode >= 300 {
-		panic(fmt.Sprint("Request to ", url, "with bad status code ", r.StatusCode))
+		panic(fmt.Sprint("Request to ", url, " with bad status code ", r.StatusCode))
 	}
 
 	var repos []Repo
