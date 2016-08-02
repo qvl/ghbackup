@@ -10,7 +10,7 @@ An embarrassing simple Github backup tool
 
 ## Install
 
-    go get https://github.com/jorinvo/github-backup
+    go get github.com/jorinvo/github-backup
 
 
 ## What happens?
