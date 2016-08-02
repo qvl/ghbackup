@@ -2,12 +2,15 @@
 
 An embarrassing simple Github backup tool
 
-
     Usage: github-backup user backupdir
 
     user       github user name to get the repositories from
     backupdir  directory path to save the repositories to
 
+
+### Install
+
+    go get https://github.com/jorinvo/github-backup
 
 
 ### What happens?
