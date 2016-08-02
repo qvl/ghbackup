@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -56,15 +57,15 @@ func parseArgs() (string, string) {
 
 // Get repositories from Github.
 // Follow "next" links recursivly.
-func getRepos(url string) []Repo {
-	r, err := http.Get(url)
+func getRepos(rawUrl string) []Repo {
+	r, err := http.Get(setMaxPageSize(rawUrl))
 	if err != nil {
 		panic(err)
 	}
 	defer r.Body.Close()
 
 	if r.StatusCode >= 300 {
-		panic(fmt.Sprint("Request to ", url, " with bad status code ", r.StatusCode))
+		panic(fmt.Sprint("Request to ", r.Request.URL, " with bad status code ", r.StatusCode))
 	}
 
 	var repos []Repo
@@ -77,6 +78,17 @@ func getRepos(url string) []Repo {
 	}
 
 	return repos
+}
+
+func setMaxPageSize(rawUrl string) string {
+	u, err := url.Parse(rawUrl)
+	if err != nil {
+		panic(err)
+	}
+	q := u.Query()
+	q.Set("per_page", "100")
+	u.RawQuery = q.Encode()
+	return u.String()
 }
 
 // Clone new repo or pull in existing repo
