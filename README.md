@@ -16,7 +16,7 @@ An embarrassing simple Github repo backup tool
 ## What happens?
 
 Get all repositories of a Github user.
-Save them to folder.
+Save them to a folder.
 Update already cloned repositories.
 
 Best served as a scheduled job to keep your backups up to date!
