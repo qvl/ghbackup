@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"path"
 	"strings"
-	"sync"
 )
 
 var usage = `Usage: %s user backupdir
@@ -31,25 +30,16 @@ func main() {
 
 	fmt.Println("Backup for user", user, "with", len(repos), "repositories")
 
-	batches := len(repos)/batchSize + 1
-	for b := 0; b < batches; b++ {
-		batchEnd := (b + 1) * batchSize
-		if batchEnd >= len(repos) {
-			batchEnd = len(repos)
-		}
-		batch := repos[b*batchSize : batchEnd]
-
-		func() {
-			var wg sync.WaitGroup
-			for _, repo := range batch {
-				wg.Add(1)
-				go func(routineRepo Repo) {
-					defer wg.Done()
-					updateRepo(backupDir, routineRepo)
-				}(repo)
+	jobs := make(chan Repo)
+	for w := 0; w < batchSize; w++ {
+		go func() {
+			for repo := range jobs {
+				updateRepo(backupDir, repo)
 			}
-			wg.Wait()
 		}()
+	}
+	for _, repo := range repos {
+		jobs <- repo
 	}
 }
 
