@@ -12,27 +12,29 @@ import (
 	"strings"
 )
 
-var usage = `Usage: %s user backupdir
+var usage = `Usage: %s githubname backupdir
 
-user       github user name to get the repositories from
-backupdir  directory path to save the repositories to`
+githubname  github user or organization name to get the repositories from
+backupdir   directory path to save the repositories to`
 
 type Repo struct {
 	Name   string
 	GitUrl string `json:"git_url"`
 }
 
-var batchSize = 10
+var maxWorkers = 10
+var githubApi = "https://api.github.com"
 
 func main() {
-	user, backupDir := parseArgs()
+	name, backupDir := parseArgs()
 
-	repos := getRepos(fmt.Sprint("https://api.github.com/users/", user, "/repos"))
+	category := getCategory(name)
+	repos := getRepos(setMaxPageSize(strings.Join([]string{githubApi, category, name, "repos"}, "/")))
 
-	fmt.Println("Backup for user", user, "with", len(repos), "repositories")
+	fmt.Println("Backup for", category[:len(category)-1], name, "with", len(repos), "repositories")
 
 	jobs := make(chan Repo)
-	for w := 0; w < batchSize; w++ {
+	for w := 0; w < maxWorkers; w++ {
 		go func() {
 			for repo := range jobs {
 				updateRepo(backupDir, repo)
@@ -44,7 +46,7 @@ func main() {
 	}
 }
 
-// Get the two positional arguments user and backupdir
+// Get the two positional arguments githubname and backupdir
 func parseArgs() (string, string) {
 	flag.Parse()
 	args := flag.Args()
@@ -55,26 +57,54 @@ func parseArgs() (string, string) {
 	return args[0], args[1]
 }
 
+// Returns "users" or "orgs" depending on type of account
+func getCategory(name string) string {
+	r, err := http.Get(strings.Join([]string{githubApi, "users", name}, "/"))
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+	if r.StatusCode >= 300 {
+		panic(fmt.Sprint("Request to ", r.Request.URL, " with bad status code ", r.StatusCode))
+	}
+
+	var account struct {
+		Type string
+	}
+	json.NewDecoder(r.Body).Decode(&account)
+
+	if account.Type == "User" {
+		return "users"
+	}
+	if account.Type == "Organization" {
+		return "orgs"
+	}
+	panic(fmt.Sprint("Unknown type of account ", account.Type, " for name ", name))
+}
+
 // Get repositories from Github.
 // Follow "next" links recursivly.
-func getRepos(rawUrl string) []Repo {
-	r, err := http.Get(setMaxPageSize(rawUrl))
+func getRepos(u string) []Repo {
+	r, err := http.Get(u)
 	if err != nil {
 		panic(err)
 	}
 	defer r.Body.Close()
 
 	if r.StatusCode >= 300 {
-		panic(fmt.Sprint("Request to ", r.Request.URL, " with bad status code ", r.StatusCode))
+		panic(fmt.Sprint("Request to ", u, " with bad status code ", r.StatusCode))
 	}
 
 	var repos []Repo
 	json.NewDecoder(r.Body).Decode(&repos)
 
-	firstLink := strings.Split(r.Header["Link"][0], ",")[0]
-	if strings.Contains(firstLink, "rel=\"next\"") {
-		urlInBrackets := strings.Split(firstLink, ";")[0]
-		return append(repos, getRepos(urlInBrackets[1:len(urlInBrackets)-1])...)
+	linkHeader := r.Header["Link"]
+	if len(linkHeader) > 0 {
+		firstLink := strings.Split(linkHeader[0], ",")[0]
+		if strings.Contains(firstLink, "rel=\"next\"") {
+			urlInBrackets := strings.Split(firstLink, ";")[0]
+			return append(repos, getRepos(urlInBrackets[1:len(urlInBrackets)-1])...)
+		}
 	}
 
 	return repos
@@ -124,4 +154,11 @@ func exists(path string) bool {
 		}
 	}
 	return true
+}
+
+func min(x, y int) int {
+	if x < y {
+		return x
+	}
+	return y
 }

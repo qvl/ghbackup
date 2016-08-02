@@ -2,10 +2,10 @@
 
 Embarrassing simple Github backup tool
 
-    Usage: github-backup user backupdir
+    Usage: github-backup githubname backupdir
 
-    user       github user name to get the repositories from
-    backupdir  directory path to save the repositories to
+    githubname  github user or organization name to get the repositories from
+    backupdir   directory path to save the repositories to
 
 
 ## Install
