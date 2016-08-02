@@ -1,6 +1,6 @@
 # github-backup
 
-An embarrassing simple Github backup tool
+An embarrassing simple Github repo backup tool
 
     Usage: github-backup user backupdir
 
@@ -20,3 +20,10 @@ Save them to folder.
 Update already cloned repositories.
 
 Best served as a scheduled job to keep your backups up to date!
+
+
+## Limits
+
+It's repos only. And public only.
+If you are more serious about it pick one of the fancy solutions out there
+and backup your issues and wikis and private stuff.
