@@ -22,13 +22,12 @@ type Repo struct {
 }
 
 var batchSize = 10
+var githubApi = "https://api.github.com"
 
 func main() {
 	user, backupDir := parseArgs()
 
-	repos := getRepos(fmt.Sprint("https://api.github.com/users/", user, "/repos"))
-
-	fmt.Println("Backup for user", user, "with", len(repos), "repositories")
+	fmt.Println("Backup for", user)
 
 	jobs := make(chan Repo)
 	for w := 0; w < batchSize; w++ {
@@ -38,9 +37,8 @@ func main() {
 			}
 		}()
 	}
-	for _, repo := range repos {
-		jobs <- repo
-	}
+
+	fetchRepos(user, jobs)
 }
 
 // Get the two positional arguments user and backupdir
@@ -54,9 +52,11 @@ func parseArgs() (string, string) {
 	return args[0], args[1]
 }
 
-// Get repositories from Github.
-// Follow "next" links recursivly.
-func getRepos(url string) []Repo {
+// Fetch repositories from Github.
+// Write them to a channel.
+// Follow "next" links recursively.
+func fetchRepos(user string, repos chan Repo) {
+	url := strings.Join([]string{githubApi, "users", user, "repos"}, "/")
 	r, err := http.Get(url)
 	if err != nil {
 		panic(err)
@@ -67,16 +67,18 @@ func getRepos(url string) []Repo {
 		panic(fmt.Sprint("Request to ", url, " with bad status code ", r.StatusCode))
 	}
 
-	var repos []Repo
-	json.NewDecoder(r.Body).Decode(&repos)
+	var repoList []Repo
+	json.NewDecoder(r.Body).Decode(&repoList)
+
+	for _, repo := range repoList {
+		repos <- repo
+	}
 
 	firstLink := strings.Split(r.Header["Link"][0], ",")[0]
 	if strings.Contains(firstLink, "rel=\"next\"") {
 		urlInBrackets := strings.Split(firstLink, ";")[0]
-		return append(repos, getRepos(urlInBrackets[1:len(urlInBrackets)-1])...)
+		fetchRepos(urlInBrackets[1:len(urlInBrackets)-1], repos)
 	}
-
-	return repos
 }
 
 // Clone new repo or pull in existing repo
