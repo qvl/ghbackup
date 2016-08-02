@@ -8,12 +8,12 @@ An embarrassing simple Github backup tool
     backupdir  directory path to save the repositories to
 
 
-### Install
+## Install
 
     go get https://github.com/jorinvo/github-backup
 
 
-### What happens?
+## What happens?
 
 Get all repositories of a Github user.
 Save them to folder.
