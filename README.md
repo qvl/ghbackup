@@ -27,3 +27,4 @@ Best served as a scheduled job to keep your backups up to date!
 It's repos only. And public only.
 If you are more serious about it pick one of the fancy solutions out there
 and backup your issues and wikis and private stuff.
+Or fork me!
