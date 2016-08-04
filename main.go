@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-// Printed on for -h or with wrong arguments
+// Printed for -help, -h or with wrong number of arguments
 var usage = `Usage: %s githubname backupdir
 
 githubname  github user or organization name to get the repositories from
@@ -54,10 +54,14 @@ func main() {
 
 // Get the two positional arguments githubname and backupdir
 func parseArgs() (string, string) {
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, usage, os.Args[0])
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 	args := flag.Args()
 	if len(args) != 2 {
-		fmt.Fprintf(os.Stderr, usage, os.Args[0])
+		flag.Usage()
 		os.Exit(1)
 	}
 	return args[0], args[1]
