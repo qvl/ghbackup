@@ -12,6 +12,7 @@ import (
 	"strings"
 )
 
+// Printed on for -h or with wrong arguments
 var usage = `Usage: %s githubname backupdir
 
 githubname  github user or organization name to get the repositories from
@@ -25,6 +26,7 @@ type Repo struct {
 var maxWorkers = 10
 var githubApi = "https://api.github.com"
 
+// Get command line arguments and start updating repositories
 func main() {
 	name, backupDir := parseArgs()
 
@@ -114,6 +116,7 @@ func getRepos(u string) []Repo {
 	return repos
 }
 
+//  Adds per_page=100 to a URL
 func setMaxPageSize(rawUrl string) string {
 	u, err := url.Parse(rawUrl)
 	if err != nil {
@@ -158,11 +161,4 @@ func exists(path string) bool {
 		}
 	}
 	return true
-}
-
-func min(x, y int) int {
-	if x < y {
-		return x
-	}
-	return y
 }
