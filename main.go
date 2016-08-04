@@ -34,7 +34,11 @@ func main() {
 	fmt.Println("Backup for", category[:len(category)-1], name, "with", len(repos), "repositories")
 
 	jobs := make(chan Repo)
-	for w := 0; w < maxWorkers; w++ {
+	workers := maxWorkers
+	if len(repos) < maxWorkers {
+		workers = 1
+	}
+	for w := 0; w < workers; w++ {
 		go func() {
 			for repo := range jobs {
 				updateRepo(backupDir, repo)
