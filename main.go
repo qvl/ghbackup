@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+	"sync"
 )
 
 // Printed for -help, -h or with wrong number of arguments
@@ -36,7 +37,7 @@ func main() {
 	fmt.Println("Backup for", category[:len(category)-1], name, "with", len(repos), "repositories")
 
 	jobs := make(chan Repo)
-	doneJobs := make(chan bool)
+	var wg sync.WaitGroup
 
 	workers := maxWorkers
 
@@ -45,11 +46,12 @@ func main() {
 	}
 
 	for w := 0; w < workers; w++ {
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			for repo := range jobs {
 				updateRepo(backupDir, repo)
 			}
-			doneJobs <- true
 		}()
 	}
 
@@ -57,10 +59,7 @@ func main() {
 		jobs <- repo
 	}
 	close(jobs)
-
-	for w := 0; w < workers; w++ {
-		<-doneJobs
-	}
+	wg.Wait()
 }
 
 // Get the two positional arguments githubname and backupdir
