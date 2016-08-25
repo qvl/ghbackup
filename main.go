@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -16,8 +17,10 @@ import (
 // Printed for -help, -h or with wrong number of arguments
 var usage = `Usage: %s githubname backupdir
 
-githubname  github user or organization name to get the repositories from
-backupdir   directory path to save the repositories to`
+  githubname  github user or organization name to get the repositories from
+  backupdir   directory path to save the repositories to
+
+`
 
 type Repo struct {
 	Name   string
@@ -27,6 +30,8 @@ type Repo struct {
 var maxWorkers = 10
 var githubApi = "https://api.github.com"
 
+var verboseFlag = flag.Bool("verbose", false, "print progress information")
+
 // Get command line arguments and start updating repositories
 func main() {
 	name, backupDir := parseArgs()
@@ -34,7 +39,7 @@ func main() {
 	category := getCategory(name)
 	repos := getRepos(setMaxPageSize(strings.Join([]string{githubApi, category, name, "repos"}, "/")))
 
-	fmt.Println("Backup for", category[:len(category)-1], name, "with", len(repos), "repositories")
+	verbose("Backup for", category[:len(category)-1], name, "with", len(repos), "repositories")
 
 	jobs := make(chan Repo)
 	var wg sync.WaitGroup
@@ -148,12 +153,12 @@ func updateRepo(backupDir string, repo Repo) {
 
 	var cmd *exec.Cmd
 	if exists(repoDir) {
-		defer fmt.Println("Updated repository:", repo.Name)
+		defer verbose("Updated repository:", repo.Name)
 
 		cmd = exec.Command("git", "pull")
 		cmd.Dir = repoDir
 	} else {
-		defer fmt.Println("Cloned  repository:", repo.Name)
+		defer verbose("Cloned  repository:", repo.Name)
 
 		cmd = exec.Command("git", "clone", repo.GitUrl, repoDir)
 	}
@@ -175,4 +180,10 @@ func exists(path string) bool {
 		}
 	}
 	return true
+}
+
+func verbose(info ...interface{}) {
+	if *verboseFlag {
+		log.Println(info...)
+	}
 }
