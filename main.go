@@ -22,13 +22,13 @@ var usage = `Usage: %s githubname backupdir
 
 `
 
-type Repo struct {
+type repo struct {
 	Name   string
-	GitUrl string `json:"git_url"`
+	GitURL string `json:"git_url"`
 }
 
 var maxWorkers = 10
-var githubApi = "https://api.github.com"
+var githubAPI = "https://api.github.com"
 
 var verboseFlag = flag.Bool("verbose", false, "print progress information")
 
@@ -40,7 +40,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	url, err := setMaxPageSize(strings.Join([]string{githubApi, category, name, "repos"}, "/"))
+	url, err := setMaxPageSize(strings.Join([]string{githubAPI, category, name, "repos"}, "/"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -51,7 +51,7 @@ func main() {
 
 	verbose("Backup for", category[:len(category)-1], name, "with", len(repos), "repositories")
 
-	jobs := make(chan Repo)
+	jobs := make(chan repo)
 
 	workers := maxWorkers
 	if len(repos) < maxWorkers {
@@ -64,8 +64,8 @@ func main() {
 	for w := 0; w < workers; w++ {
 		go func() {
 			defer wg.Done()
-			for repo := range jobs {
-				err := updateRepo(backupDir, repo)
+			for r := range jobs {
+				err := updateRepo(backupDir, r)
 				if err != nil {
 					log.Println(err)
 				}
@@ -73,8 +73,8 @@ func main() {
 		}()
 	}
 
-	for _, repo := range repos {
-		jobs <- repo
+	for _, r := range repos {
+		jobs <- r
 	}
 	close(jobs)
 	wg.Wait()
@@ -97,11 +97,13 @@ func parseArgs() (string, string) {
 
 // Returns "users" or "orgs" depending on type of account
 func getCategory(name string) (string, error) {
-	res, err := http.Get(strings.Join([]string{githubApi, "users", name}, "/"))
+	res, err := http.Get(strings.Join([]string{githubAPI, "users", name}, "/"))
 	if err != nil {
 		return "", fmt.Errorf("cannot get user info: %v", err)
 	}
-	defer res.Body.Close()
+	defer func() {
+		_ = res.Body.Close()
+	}()
 	if res.StatusCode >= 300 {
 		return "", fmt.Errorf("bad response from %s: %v", res.Request.URL, res.Status)
 	}
@@ -109,7 +111,10 @@ func getCategory(name string) (string, error) {
 	var account struct {
 		Type string
 	}
-	json.NewDecoder(res.Body).Decode(&account)
+	err = json.NewDecoder(res.Body).Decode(&account)
+	if err != nil {
+		return "", fmt.Errorf("cannot decode JSON response: %v", err)
+	}
 
 	if account.Type == "User" {
 		return "users", nil
@@ -117,23 +122,28 @@ func getCategory(name string) (string, error) {
 	if account.Type == "Organization" {
 		return "orgs", nil
 	}
-	return "", fmt.Errorf("unknown type of account %s for name %s", account.Type)
+	return "", fmt.Errorf("unknown type of account %s for name %s", account.Type, name)
 }
 
 // Get repositories from Github.
 // Follow "next" links recursivly.
-func getRepos(u string) ([]Repo, error) {
+func getRepos(u string) ([]repo, error) {
 	res, err := http.Get(u)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get repos: %v", err)
 	}
-	defer res.Body.Close()
+	defer func() {
+		_ = res.Body.Close()
+	}()
 	if res.StatusCode >= 300 {
 		return nil, fmt.Errorf("bad response from %s: %v", res.Request.URL, res.Status)
 	}
 
-	var repos []Repo
-	json.NewDecoder(res.Body).Decode(&repos)
+	var repos []repo
+	err = json.NewDecoder(res.Body).Decode(&repos)
+	if err != nil {
+		return nil, fmt.Errorf("cannot decode JSON response: %v", err)
+	}
 
 	linkHeader := res.Header["Link"]
 	if len(linkHeader) > 0 {
@@ -149,10 +159,10 @@ func getRepos(u string) ([]Repo, error) {
 }
 
 //  Adds per_page=100 to a URL
-func setMaxPageSize(rawUrl string) (string, error) {
-	u, err := url.Parse(rawUrl)
+func setMaxPageSize(rawURL string) (string, error) {
+	u, err := url.Parse(rawURL)
 	if err != nil {
-		fmt.Errorf("cannot parse url: %v", err)
+		return "", fmt.Errorf("cannot parse url: %v", err)
 	}
 	q := u.Query()
 	q.Set("per_page", "100")
@@ -161,8 +171,8 @@ func setMaxPageSize(rawUrl string) (string, error) {
 }
 
 // Clone new repo or pull in existing repo
-func updateRepo(backupDir string, repo Repo) error {
-	repoDir := path.Join(backupDir, repo.Name)
+func updateRepo(backupDir string, r repo) error {
+	repoDir := path.Join(backupDir, r.Name)
 
 	var cmd *exec.Cmd
 	repoExists, err := exists(repoDir)
@@ -170,12 +180,12 @@ func updateRepo(backupDir string, repo Repo) error {
 		return fmt.Errorf("cannot check if repo exists: %v", err)
 	}
 	if repoExists {
-		verbose("Update repository:", repo.Name)
+		verbose("Update repository:", r.Name)
 		cmd = exec.Command("git", "pull")
 		cmd.Dir = repoDir
 	} else {
-		verbose("Clone  repository:", repo.Name)
-		cmd = exec.Command("git", "clone", repo.GitUrl, repoDir)
+		verbose("Clone  repository:", r.Name)
+		cmd = exec.Command("git", "clone", r.GitURL, repoDir)
 	}
 
 	err = cmd.Run()
