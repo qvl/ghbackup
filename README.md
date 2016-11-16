@@ -1,3 +1,6 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/jorinvo/github-backup)](https://goreportcard.com/report/github.com/jorinvo/github-backup)
+
+
 # github-backup
 
 Embarrassing simple Github backup tool
