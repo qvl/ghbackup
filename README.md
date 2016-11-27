@@ -1,7 +1,7 @@
+# github-backup
+
 [![Go Report Card](https://goreportcard.com/badge/github.com/jorinvo/github-backup)](https://goreportcard.com/report/github.com/jorinvo/github-backup)
 
-
-# github-backup
 
 Embarrassing simple Github backup tool
 
@@ -31,3 +31,7 @@ It's repos only. And public only.
 If you are more serious about it pick one of the fancy solutions out there
 and backup your issues and wikis and private stuff.
 Or fork me!
+
+## License
+
+[MIT](./LICENSE)
