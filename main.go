@@ -30,26 +30,28 @@ type repo struct {
 var maxWorkers = 10
 var githubAPI = "https://api.github.com"
 
-var verboseFlag = flag.Bool("verbose", false, "print progress information")
-
 // Get command line arguments and start updating repositories
 func main() {
-	name, backupDir := parseArgs()
+	logger := log.New(os.Stderr, "", log.Ldate|log.Ltime|log.Lshortfile|log.LUTC)
+	name, backupDir, verbose := parseArgs()
+	client := http.DefaultClient
 
-	category, err := getCategory(name)
+	category, err := getCategory(name, client)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	url, err := setMaxPageSize(strings.Join([]string{githubAPI, category, name, "repos"}, "/"))
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
-	repos, err := getRepos(url)
+	repos, err := getRepos(url, client)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
-	verbose("Backup for", category[:len(category)-1], name, "with", len(repos), "repositories")
+	if verbose {
+		logger.Println("Backup for", category[:len(category)-1], name, "with", len(repos), "repositories")
+	}
 
 	jobs := make(chan repo)
 
@@ -65,9 +67,9 @@ func main() {
 		go func() {
 			defer wg.Done()
 			for r := range jobs {
-				err := updateRepo(backupDir, r)
+				err := updateRepo(backupDir, r, logger, verbose)
 				if err != nil {
-					log.Println(err)
+					logger.Println(err)
 				}
 			}
 		}()
@@ -81,7 +83,8 @@ func main() {
 }
 
 // Get the two positional arguments githubname and backupdir
-func parseArgs() (string, string) {
+func parseArgs() (string, string, bool) {
+	verbose := flag.Bool("verbose", false, "print progress information")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, usage, os.Args[0])
 		flag.PrintDefaults()
@@ -92,12 +95,12 @@ func parseArgs() (string, string) {
 		flag.Usage()
 		os.Exit(1)
 	}
-	return args[0], args[1]
+	return args[0], args[1], *verbose
 }
 
 // Returns "users" or "orgs" depending on type of account
-func getCategory(name string) (string, error) {
-	res, err := http.Get(strings.Join([]string{githubAPI, "users", name}, "/"))
+func getCategory(name string, client *http.Client) (string, error) {
+	res, err := client.Get(strings.Join([]string{githubAPI, "users", name}, "/"))
 	if err != nil {
 		return "", fmt.Errorf("cannot get user info: %v", err)
 	}
@@ -127,8 +130,8 @@ func getCategory(name string) (string, error) {
 
 // Get repositories from Github.
 // Follow "next" links recursivly.
-func getRepos(u string) ([]repo, error) {
-	res, err := http.Get(u)
+func getRepos(u string, client *http.Client) ([]repo, error) {
+	res, err := client.Get(u)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get repos: %v", err)
 	}
@@ -150,7 +153,7 @@ func getRepos(u string) ([]repo, error) {
 		firstLink := strings.Split(linkHeader[0], ",")[0]
 		if strings.Contains(firstLink, "rel=\"next\"") {
 			urlInBrackets := strings.Split(firstLink, ";")[0]
-			nextRepos, err := getRepos(urlInBrackets[1 : len(urlInBrackets)-1])
+			nextRepos, err := getRepos(urlInBrackets[1:len(urlInBrackets)-1], client)
 			return append(repos, nextRepos...), err
 		}
 	}
@@ -171,7 +174,7 @@ func setMaxPageSize(rawURL string) (string, error) {
 }
 
 // Clone new repo or pull in existing repo
-func updateRepo(backupDir string, r repo) error {
+func updateRepo(backupDir string, r repo, logger *log.Logger, verbose bool) error {
 	repoDir := path.Join(backupDir, r.Name)
 
 	var cmd *exec.Cmd
@@ -180,11 +183,15 @@ func updateRepo(backupDir string, r repo) error {
 		return fmt.Errorf("cannot check if repo exists: %v", err)
 	}
 	if repoExists {
-		verbose("Update repository:", r.Name)
+		if verbose {
+			logger.Println("Update repository:", r.Name)
+		}
 		cmd = exec.Command("git", "pull")
 		cmd.Dir = repoDir
 	} else {
-		verbose("Clone  repository:", r.Name)
+		if verbose {
+			logger.Println("Clone  repository:", r.Name)
+		}
 		cmd = exec.Command("git", "clone", r.GitURL, repoDir)
 	}
 
@@ -206,10 +213,4 @@ func exists(path string) (bool, error) {
 		return false, fmt.Errorf("cannot get stats for path `%s`: %v", path, err)
 	}
 	return true, nil
-}
-
-func verbose(info ...interface{}) {
-	if *verboseFlag {
-		log.Println(info...)
-	}
 }
