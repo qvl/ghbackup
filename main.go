@@ -190,7 +190,7 @@ func updateRepo(backupDir string, r repo, logger *log.Logger, verbose bool) erro
 		cmd.Dir = repoDir
 	} else {
 		if verbose {
-			logger.Println("Clone  repository:", r.Name)
+			logger.Println("Clone repository:", r.Name)
 		}
 		cmd = exec.Command("git", "clone", r.GitURL, repoDir)
 	}
