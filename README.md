@@ -9,6 +9,9 @@ Embarrassing simple Github backup tool
 
     githubname  github user or organization name to get the repositories from
     backupdir   directory path to save the repositories to
+    
+    -verbose
+    	print progress information
 
 
 ## Install
