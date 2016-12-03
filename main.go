@@ -16,7 +16,7 @@ import (
 )
 
 // Printed for -help, -h or with wrong number of arguments
-var usage = `Usage: %s githubname backupdir
+const usage = `Usage: %s githubname backupdir
 
   githubname  github user or organization name to get the repositories from
   backupdir   directory path to save the repositories to
@@ -28,43 +28,75 @@ type repo struct {
 	GitURL string `json:"git_url"`
 }
 
-var maxWorkers = 10
-var githubAPI = "https://api.github.com"
+const defaultMaxWorkers = 10
+const defaultGithubAPI = "https://api.github.com"
 
 // Get command line arguments and start updating repositories
 func main() {
-	name, backupDir, verbose := parseArgs()
-	// Get line numbers for errors
-	logger := log.New(os.Stderr, "", log.LstdFlags|log.Lshortfile|log.LUTC)
+	// Flags
+	verbose := flag.Bool("verbose", false, "print progress information")
+
+	// Parse args
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, usage, os.Args[0])
+		flag.PrintDefaults()
+	}
+	flag.Parse()
+	args := flag.Args()
+	if len(args) != 2 {
+		flag.Usage()
+		os.Exit(1)
+	}
+
 	// Logger for verbose mode
-	var info *log.Logger
-	if verbose {
-		info = log.New(os.Stderr, "", log.LstdFlags|log.LUTC)
+	var verboseLogger *log.Logger
+	if *verbose {
+		verboseLogger = log.New(os.Stderr, "", log.LstdFlags|log.LUTC)
 	} else {
-		info = log.New(ioutil.Discard, "", 0)
+		verboseLogger = log.New(ioutil.Discard, "", 0)
 	}
 
-	client := http.DefaultClient
+	backup(backupOpts{
+		name:       args[0],
+		dir:        args[1],
+		httpClient: http.DefaultClient,
+		// Log errors with line numbers
+		err:     log.New(os.Stderr, "", log.LstdFlags|log.Lshortfile|log.LUTC),
+		verbose: verboseLogger,
+	})
+}
 
-	category, err := getCategory(name, client)
+type backupOpts struct {
+	name       string
+	dir        string
+	httpClient *http.Client
+	err        *log.Logger
+	verbose    *log.Logger
+}
+
+// Update repos for the given options
+func backup(opts backupOpts) {
+	category, err := getCategory(opts.name, opts.httpClient)
 	if err != nil {
-		logger.Fatal(err)
-	}
-	url, err := setMaxPageSize(strings.Join([]string{githubAPI, category, name, "repos"}, "/"))
-	if err != nil {
-		logger.Fatal(err)
-	}
-	repos, err := getRepos(url, client)
-	if err != nil {
-		logger.Fatal(err)
+		opts.err.Fatal(err)
 	}
 
-	info.Println("Backup for", category[:len(category)-1], name, "with", len(repos), "repositories")
+	url, err := setMaxPageSize(strings.Join([]string{defaultGithubAPI, category, opts.name, "repos"}, "/"))
+	if err != nil {
+		opts.err.Fatal(err)
+	}
+
+	repos, err := getRepos(url, opts.httpClient)
+	if err != nil {
+		opts.err.Fatal(err)
+	}
+
+	opts.verbose.Println("Backup for", category[:len(category)-1], opts.name, "with", len(repos), "repositories")
 
 	jobs := make(chan repo)
 
-	workers := maxWorkers
-	if len(repos) < maxWorkers {
+	workers := defaultMaxWorkers
+	if len(repos) < defaultMaxWorkers {
 		workers = len(repos)
 	}
 
@@ -75,9 +107,9 @@ func main() {
 		go func() {
 			defer wg.Done()
 			for r := range jobs {
-				err := updateRepo(backupDir, r, info)
+				err := updateRepo(opts.dir, r, opts.verbose)
 				if err != nil {
-					logger.Println(err)
+					opts.err.Println(err)
 				}
 			}
 		}()
@@ -90,25 +122,9 @@ func main() {
 	wg.Wait()
 }
 
-// Get the two positional arguments githubname and backupdir, and the -verbose flag
-func parseArgs() (string, string, bool) {
-	verbose := flag.Bool("verbose", false, "print progress information")
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, usage, os.Args[0])
-		flag.PrintDefaults()
-	}
-	flag.Parse()
-	args := flag.Args()
-	if len(args) != 2 {
-		flag.Usage()
-		os.Exit(1)
-	}
-	return args[0], args[1], *verbose
-}
-
 // Returns "users" or "orgs" depending on type of account
 func getCategory(name string, client *http.Client) (string, error) {
-	res, err := client.Get(strings.Join([]string{githubAPI, "users", name}, "/"))
+	res, err := client.Get(strings.Join([]string{defaultGithubAPI, "users", name}, "/"))
 	if err != nil {
 		return "", fmt.Errorf("cannot get user info: %v", err)
 	}
