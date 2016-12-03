@@ -1,6 +1,7 @@
 # github-backup
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/jorinvo/github-backup)](https://goreportcard.com/report/github.com/jorinvo/github-backup)
+[![GoDoc](https://godoc.org/github.com/qvl/github-backup?status.svg)](https://godoc.org/github.com/qvl/github-backup)
+[![Go Report Card](https://goreportcard.com/badge/github.com/qvl/github-backup)](https://goreportcard.com/report/github.com/qvl/github-backup)
 
 
 Embarrassing simple Github backup tool
@@ -9,16 +10,16 @@ Embarrassing simple Github backup tool
 
     githubname  github user or organization name to get the repositories from
     backupdir   directory path to save the repositories to
-    
+
     -verbose
     	print progress information
 
 
 ## Install
 
-- Via [Go](https://golang.org/) setup: `go get github.com/jorinvo/github-backup`
+- Via [Go](https://golang.org/) setup: `go get github.com/qvl/github-backup`
 
-- Or download latest binary: https://github.com/jorinvo/github-backup/releases
+- Or download latest binary: https://github.com/qvl/github-backup/releases
 
 
 ## What happens?
@@ -40,7 +41,7 @@ Or fork me!
 
 ## Development
 
-Make sure to use `gofmt` and create a [Pull Request](https://github.com/jorinvo/github-backup/pulls).
+Make sure to use `gofmt` and create a [Pull Request](https://github.com/qvl/github-backup/pulls).
 
 ### Releasing
 
