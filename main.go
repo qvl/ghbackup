@@ -153,36 +153,45 @@ func getCategory(name string, client *http.Client) (string, error) {
 }
 
 // Get repositories from Github.
-// Follow "next" links recursivly.
-func getRepos(u string, client *http.Client) ([]repo, error) {
-	res, err := client.Get(u)
-	if err != nil {
-		return nil, fmt.Errorf("cannot get repos: %v", err)
-	}
-	defer func() {
-		_ = res.Body.Close()
-	}()
-	if res.StatusCode >= 300 {
-		return nil, fmt.Errorf("bad response from %s: %v", res.Request.URL, res.Status)
-	}
+// Follow all "next" links.
+func getRepos(url string, client *http.Client) ([]repo, error) {
+	var allRepos []repo
 
-	var repos []repo
-	err = json.NewDecoder(res.Body).Decode(&repos)
-	if err != nil {
-		return nil, fmt.Errorf("cannot decode JSON response: %v", err)
-	}
-
-	linkHeader := res.Header["Link"]
-	if len(linkHeader) > 0 {
-		firstLink := strings.Split(linkHeader[0], ",")[0]
-		if strings.Contains(firstLink, "rel=\"next\"") {
-			urlInBrackets := strings.Split(firstLink, ";")[0]
-			nextRepos, err := getRepos(urlInBrackets[1:len(urlInBrackets)-1], client)
-			return append(repos, nextRepos...), err
+	// Go through all pages
+	for {
+		res, err := client.Get(url)
+		if err != nil {
+			return nil, fmt.Errorf("cannot get repos: %v", err)
 		}
+		defer func() {
+			_ = res.Body.Close()
+		}()
+		if res.StatusCode >= 300 {
+			return nil, fmt.Errorf("bad response from %s: %v", res.Request.URL, res.Status)
+		}
+
+		var repos []repo
+		err = json.NewDecoder(res.Body).Decode(&repos)
+		if err != nil {
+			return nil, fmt.Errorf("cannot decode JSON response: %v", err)
+		}
+
+		allRepos = append(allRepos, repos...)
+
+		linkHeader := res.Header["Link"]
+		if len(linkHeader) == 0 {
+			break
+		}
+		firstLink := strings.Split(linkHeader[0], ",")[0]
+		if !strings.Contains(firstLink, "rel=\"next\"") {
+			break
+		}
+		urlInBrackets := strings.Split(firstLink, ";")[0]
+		// Set url for next iteration
+		url = urlInBrackets[1 : len(urlInBrackets)-1]
 	}
 
-	return repos, nil
+	return allRepos, nil
 }
 
 //  Adds per_page=100 to a URL
