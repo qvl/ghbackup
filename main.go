@@ -184,13 +184,13 @@ func updateRepo(backupDir string, r repo, logger *log.Logger, verbose bool) erro
 	}
 	if repoExists {
 		if verbose {
-			logger.Println("Update repository:", r.Name)
+			logger.Println("Update	repository:", r.Name)
 		}
 		cmd = exec.Command("git", "pull")
 		cmd.Dir = repoDir
 	} else {
 		if verbose {
-			logger.Println("Clone  repository:", r.Name)
+			logger.Println("Clone	repository:", r.Name)
 		}
 		cmd = exec.Command("git", "clone", r.GitURL, repoDir)
 	}
