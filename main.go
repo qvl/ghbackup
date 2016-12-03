@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -32,8 +33,17 @@ var githubAPI = "https://api.github.com"
 
 // Get command line arguments and start updating repositories
 func main() {
-	logger := log.New(os.Stderr, "", log.Ldate|log.Ltime|log.Lshortfile|log.LUTC)
 	name, backupDir, verbose := parseArgs()
+	// Get line numbers for errors
+	logger := log.New(os.Stderr, "", log.LstdFlags|log.Lshortfile|log.LUTC)
+	// Logger for verbose mode
+	var info *log.Logger
+	if verbose {
+		info = log.New(os.Stderr, "", log.LstdFlags|log.LUTC)
+	} else {
+		info = log.New(ioutil.Discard, "", 0)
+	}
+
 	client := http.DefaultClient
 
 	category, err := getCategory(name, client)
@@ -49,9 +59,7 @@ func main() {
 		logger.Fatal(err)
 	}
 
-	if verbose {
-		logger.Println("Backup for", category[:len(category)-1], name, "with", len(repos), "repositories")
-	}
+	info.Println("Backup for", category[:len(category)-1], name, "with", len(repos), "repositories")
 
 	jobs := make(chan repo)
 
@@ -67,7 +75,7 @@ func main() {
 		go func() {
 			defer wg.Done()
 			for r := range jobs {
-				err := updateRepo(backupDir, r, logger, verbose)
+				err := updateRepo(backupDir, r, info)
 				if err != nil {
 					logger.Println(err)
 				}
@@ -82,7 +90,7 @@ func main() {
 	wg.Wait()
 }
 
-// Get the two positional arguments githubname and backupdir
+// Get the two positional arguments githubname and backupdir, and the -verbose flag
 func parseArgs() (string, string, bool) {
 	verbose := flag.Bool("verbose", false, "print progress information")
 	flag.Usage = func() {
@@ -174,7 +182,7 @@ func setMaxPageSize(rawURL string) (string, error) {
 }
 
 // Clone new repo or pull in existing repo
-func updateRepo(backupDir string, r repo, logger *log.Logger, verbose bool) error {
+func updateRepo(backupDir string, r repo, info *log.Logger) error {
 	repoDir := path.Join(backupDir, r.Name)
 
 	var cmd *exec.Cmd
@@ -183,15 +191,11 @@ func updateRepo(backupDir string, r repo, logger *log.Logger, verbose bool) erro
 		return fmt.Errorf("cannot check if repo exists: %v", err)
 	}
 	if repoExists {
-		if verbose {
-			logger.Println("Update	repository:", r.Name)
-		}
+		info.Println("Updating	", r.Name)
 		cmd = exec.Command("git", "pull")
 		cmd.Dir = repoDir
 	} else {
-		if verbose {
-			logger.Println("Clone	repository:", r.Name)
-		}
+		info.Println("Cloning	", r.Name)
 		cmd = exec.Command("git", "clone", r.GitURL, repoDir)
 	}
 
