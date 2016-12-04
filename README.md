@@ -6,13 +6,13 @@
 
 Embarrassing simple Github backup tool
 
-    Usage: gh-backup githubname backupdir
+    Usage: gh-backup name directory
 
-    githubname  github user or organization name to get the repositories from
-    backupdir   directory path to save the repositories to
+      name       github user or organization name to get the repositories from
+      directory  directory path to save the repositories to
 
-    -verbose
-    	print progress information
+      -verbose
+            print progress information
 
 
 ## Install

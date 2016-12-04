@@ -16,10 +16,10 @@ import (
 )
 
 // Printed for -help, -h or with wrong number of arguments
-const usage = `Usage: %s githubname backupdir
+const usage = `Usage: %s name directory
 
-  githubname  github user or organization name to get the repositories from
-  backupdir   directory path to save the repositories to
+  name       github user or organization name to get the repositories from
+  directory  directory path to save the repositories to
 
 `
 
