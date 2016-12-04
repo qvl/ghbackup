@@ -1,12 +1,12 @@
-# github-backup
+# gh-backup
 
-[![GoDoc](https://godoc.org/github.com/qvl/github-backup?status.svg)](https://godoc.org/github.com/qvl/github-backup)
-[![Go Report Card](https://goreportcard.com/badge/github.com/qvl/github-backup)](https://goreportcard.com/report/github.com/qvl/github-backup)
+[![GoDoc](https://godoc.org/github.com/qvl/gh-backup?status.svg)](https://godoc.org/github.com/qvl/gh-backup)
+[![Go Report Card](https://goreportcard.com/badge/github.com/qvl/gh-backup)](https://goreportcard.com/report/github.com/qvl/gh-backup)
 
 
 Embarrassing simple Github backup tool
 
-    Usage: github-backup githubname backupdir
+    Usage: gh-backup githubname backupdir
 
     githubname  github user or organization name to get the repositories from
     backupdir   directory path to save the repositories to
@@ -17,9 +17,9 @@ Embarrassing simple Github backup tool
 
 ## Install
 
-- Via [Go](https://golang.org/) setup: `go get qvl.io/github-backup`
+- Via [Go](https://golang.org/) setup: `go get qvl.io/gh-backup`
 
-- Or download latest binary: https://github.com/qvl/github-backup/releases
+- Or download latest binary: https://github.com/qvl/gh-backup/releases
 
 
 ## What happens?
@@ -41,7 +41,7 @@ Or fork me!
 
 ## Development
 
-Make sure to use `gofmt` and create a [Pull Request](https://github.com/qvl/github-backup/pulls).
+Make sure to use `gofmt` and create a [Pull Request](https://github.com/qvl/gh-backup/pulls).
 
 ### Releasing
 
