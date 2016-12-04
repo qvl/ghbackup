@@ -17,7 +17,7 @@ Embarrassing simple Github backup tool
 
 ## Install
 
-- Via [Go](https://golang.org/) setup: `go get github.com/qvl/github-backup`
+- Via [Go](https://golang.org/) setup: `go get qvl.io/github-backup`
 
 - Or download latest binary: https://github.com/qvl/github-backup/releases
 
