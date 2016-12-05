@@ -9,8 +9,12 @@ Embarrassing simple Github backup tool
     Usage: gh-backup name directory
 
       name       github user or organization name to get the repositories from
-      directory  directory path to save the repositories to
+      directory  path to save the repositories to
 
+      -auth string
+            Authentication for Github as <user>:<password>.
+            Can also use a personal access token instead of password (https://github.com/settings/tokens).
+            Authentication increases rate limiting (https://developer.github.com/v3/#rate-limiting).`
       -verbose
             print progress information
 

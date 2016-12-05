@@ -15,17 +15,22 @@ import (
 	"sync"
 )
 
-// Printed for -help, -h or with wrong number of arguments
-const usage = `Usage: %s name directory
+const (
+	// Printed for -help, -h or with wrong number of arguments
+	usage = `Usage: %s name directory
 
   name       github user or organization name to get the repositories from
-  directory  directory path to save the repositories to
+  directory  path to save the repositories to
 
 `
+	authUsage = `Basic auth for Github API as <user>:<password>.
+	Can also use a personal access token instead of password (https://github.com/settings/tokens).
+	Authentication increases rate limiting (https://developer.github.com/v3/#rate-limiting).`
+)
 
 type repo struct {
-	Name   string
-	GitURL string `json:"git_url"`
+	Name string
+	URL  string `json:"git_url"`
 }
 
 const defaultMaxWorkers = 10
@@ -34,6 +39,7 @@ const defaultGithubAPI = "https://api.github.com"
 // Get command line arguments and start updating repositories
 func main() {
 	// Flags
+	auth := flag.String("auth", "", authUsage)
 	verbose := flag.Bool("verbose", false, "print progress information")
 
 	// Parse args
@@ -59,6 +65,7 @@ func main() {
 	backup(backupOpts{
 		name:       args[0],
 		dir:        args[1],
+		auth:       *auth,
 		httpClient: http.DefaultClient,
 		// Log errors with line numbers
 		err:     log.New(os.Stderr, "", log.LstdFlags|log.Lshortfile|log.LUTC),
@@ -69,6 +76,7 @@ func main() {
 type backupOpts struct {
 	name       string
 	dir        string
+	auth       string
 	httpClient *http.Client
 	err        *log.Logger
 	verbose    *log.Logger
@@ -76,22 +84,17 @@ type backupOpts struct {
 
 // Update repos for the given options
 func backup(opts backupOpts) {
-	category, err := getCategory(opts.name, opts.httpClient)
+	u, err := getURL(opts.name, opts.httpClient)
 	if err != nil {
 		opts.err.Fatal(err)
 	}
 
-	url, err := setMaxPageSize(strings.Join([]string{defaultGithubAPI, category, opts.name, "repos"}, "/"))
+	repos, err := getRepos(u, opts.httpClient, opts.auth)
 	if err != nil {
 		opts.err.Fatal(err)
 	}
 
-	repos, err := getRepos(url, opts.httpClient)
-	if err != nil {
-		opts.err.Fatal(err)
-	}
-
-	opts.verbose.Println("Backup for", category[:len(category)-1], opts.name, "with", len(repos), "repositories")
+	opts.verbose.Println("Backup for", opts.name, "with", len(repos), "repositories")
 
 	jobs := make(chan repo)
 
@@ -120,6 +123,14 @@ func backup(opts backupOpts) {
 	}
 	close(jobs)
 	wg.Wait()
+}
+
+func getURL(account string, httpClient *http.Client) (string, error) {
+	category, err := getCategory(account, httpClient)
+	if err != nil {
+		return "", err
+	}
+	return setMaxPageSize(defaultGithubAPI + "/" + category + "/" + account + "/repos?type=owner")
 }
 
 // Returns "users" or "orgs" depending on type of account
@@ -154,12 +165,20 @@ func getCategory(name string, client *http.Client) (string, error) {
 
 // Get repositories from Github.
 // Follow all "next" links.
-func getRepos(url string, client *http.Client) ([]repo, error) {
+func getRepos(u string, client *http.Client, auth string) ([]repo, error) {
 	var allRepos []repo
 
 	// Go through all pages
 	for {
-		res, err := client.Get(url)
+		req, err := http.NewRequest("GET", u, nil)
+		if err != nil {
+			return nil, fmt.Errorf("cannot create request: %v", err)
+		}
+		if len(auth) > 0 {
+			parts := strings.Split(auth, ":")
+			req.SetBasicAuth(parts[0], parts[1])
+		}
+		res, err := client.Do(req)
 		if err != nil {
 			return nil, fmt.Errorf("cannot get repos: %v", err)
 		}
@@ -188,7 +207,7 @@ func getRepos(url string, client *http.Client) ([]repo, error) {
 		}
 		urlInBrackets := strings.Split(firstLink, ";")[0]
 		// Set url for next iteration
-		url = urlInBrackets[1 : len(urlInBrackets)-1]
+		u = urlInBrackets[1 : len(urlInBrackets)-1]
 	}
 
 	return allRepos, nil
@@ -221,7 +240,7 @@ func updateRepo(backupDir string, r repo, info *log.Logger) error {
 		cmd.Dir = repoDir
 	} else {
 		info.Println("Cloning	", r.Name)
-		cmd = exec.Command("git", "clone", r.GitURL, repoDir)
+		cmd = exec.Command("git", "clone", r.URL, repoDir)
 	}
 
 	err = cmd.Run()
