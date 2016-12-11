@@ -1,4 +1,4 @@
-# gh-backup
+#  :floppy_disk: gh-backup
 
 [![GoDoc](https://godoc.org/github.com/qvl/gh-backup?status.svg)](https://godoc.org/github.com/qvl/gh-backup)
 [![Go Report Card](https://goreportcard.com/badge/github.com/qvl/gh-backup)](https://goreportcard.com/report/github.com/qvl/gh-backup)
