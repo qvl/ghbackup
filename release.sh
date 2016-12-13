@@ -17,7 +17,7 @@ build () {
   echo "Building ${BUILD}"
   GOOS=${OS} GOARCH=${ARCH} go build -v -o="${NAME}" -ldflags="-s -w" ..
   echo "Creating zip file ${ZIP}"
-  zip ${ZIP} ${NAME} ../readme.md
+  zip ${ZIP} ${NAME} ../readme.md ../license
   rm ${NAME}
 }
 

@@ -89,4 +89,4 @@ Run `./release.sh <version>` and upload the binaries on Github.
 
 ## License
 
-[MIT](./LICENSE)
+[MIT](./license)
