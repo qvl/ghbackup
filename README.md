@@ -26,6 +26,35 @@ Embarrassing simple Github backup tool
 - Or download latest binary: https://github.com/qvl/gh-backup/releases
 
 
+## Setup
+
+Mostly, we like to setup backups to run automatically in an interval.
+There are different tools to do this:
+
+### Cron
+
+Cron is a job scheduler that already runs on most Unix systems.
+
+Let's setup `gh-backup` on a Linux server and make it run daily at 1am. This works similar on other platforms.
+
+1. Install `gh-backup`: `go get qvl.io/gh-backup`
+
+2. Setup Cron job
+
+- Run `crontab -e`
+- Add a new line and replace `NAME` and `DIR` with your options:
+
+``` sh
+0 1 * * * gh-backup NAME DIR
+```
+
+For example:
+
+``` sh
+0 1 * * * gh-backup qvl /home/qvl/backup-qvl
+```
+
+
 ## What happens?
 
 Get all repositories of a Github user.
