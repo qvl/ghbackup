@@ -1,12 +1,12 @@
-#  :floppy_disk: gh-backup
+#  :floppy_disk: ghbackup
 
-[![GoDoc](https://godoc.org/github.com/qvl/gh-backup?status.svg)](https://godoc.org/github.com/qvl/gh-backup)
-[![Go Report Card](https://goreportcard.com/badge/github.com/qvl/gh-backup)](https://goreportcard.com/report/github.com/qvl/gh-backup)
+[![GoDoc](https://godoc.org/github.com/qvl/ghbackup?status.svg)](https://godoc.org/github.com/qvl/ghbackup)
+[![Go Report Card](https://goreportcard.com/badge/github.com/qvl/ghbackup)](https://goreportcard.com/report/github.com/qvl/ghbackup)
 
 
 Embarrassing simple Github backup tool
 
-    Usage: gh-backup name directory
+    Usage: ghbackup name directory
 
       name       github user or organization name to get the repositories from
       directory  path to save the repositories to
@@ -21,9 +21,9 @@ Embarrassing simple Github backup tool
 
 ## Install
 
-- Via [Go](https://golang.org/) setup: `go get qvl.io/gh-backup`
+- Via [Go](https://golang.org/) setup: `go get qvl.io/ghbackup`
 
-- Or download latest binary: https://github.com/qvl/gh-backup/releases
+- Or download latest binary: https://github.com/qvl/ghbackup/releases
 
 
 ## Setup
@@ -35,9 +35,9 @@ There are different tools to do this:
 
 Cron is a job scheduler that already runs on most Unix systems.
 
-Let's setup `gh-backup` on a Linux server and make it run daily at 1am. This works similar on other platforms.
+Let's setup `ghbackup` on a Linux server and make it run daily at 1am. This works similar on other platforms.
 
-1. Install `gh-backup`: `go get qvl.io/gh-backup`
+1. Install `ghbackup`: `go get qvl.io/ghbackup`
 
 2. Setup Cron job
 
@@ -45,13 +45,13 @@ Let's setup `gh-backup` on a Linux server and make it run daily at 1am. This wor
 - Add a new line and replace `NAME` and `DIR` with your options:
 
 ``` sh
-0 1 * * * gh-backup NAME DIR
+0 1 * * * ghbackup NAME DIR
 ```
 
 For example:
 
 ``` sh
-0 1 * * * gh-backup qvl /home/qvl/backup-qvl
+0 1 * * * ghbackup qvl /home/qvl/backup-qvl
 ```
 
 
@@ -74,7 +74,7 @@ Or fork me!
 
 ## Development
 
-Make sure to use `gofmt` and create a [Pull Request](https://github.com/qvl/gh-backup/pulls).
+Make sure to use `gofmt` and create a [Pull Request](https://github.com/qvl/ghbackup/pulls).
 
 ### Releasing
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -e
 
-NAME="gh-backup"
+NAME="ghbackup"
 # from args
 VERSION="${1}"
 test ${VERSION} || (echo "Usage: ./release.sh <version>" && exit 1)
