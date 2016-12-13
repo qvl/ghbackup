@@ -1,6 +1,6 @@
 #  :floppy_disk: ghbackup
 
-[![GoDoc](https://godoc.org/github.com/qvl/ghbackup?status.svg)](https://godoc.org/github.com/qvl/ghbackup)
+[![GoDoc](https://godoc.org/qvl.io/ghbackup?status.svg)](https://godoc.org/qvl.io/ghbackup)
 [![Go Report Card](https://goreportcard.com/badge/github.com/qvl/ghbackup)](https://goreportcard.com/report/github.com/qvl/ghbackup)
 
 
@@ -70,6 +70,12 @@ It's repos only. And public only.
 If you are more serious about it pick one of the fancy solutions out there
 and backup your issues and wikis and private stuff.
 Or fork me!
+
+
+## Use as Go package
+
+From another Go program you can directly use the `ghbackup` sub-package.
+Have a look at the [GoDoc](https://godoc.org/qvl.io/ghbackup/ghbackup).
 
 
 ## Development

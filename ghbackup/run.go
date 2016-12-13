@@ -13,7 +13,7 @@ import (
 	"sync"
 )
 
-// Config should be passed to .Run().
+// Config should be passed to Run.
 // Only Name, Dir, Error, Verbose are required.
 type Config struct {
 	Name    string
