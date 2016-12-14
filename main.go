@@ -41,6 +41,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Log errors with line numbers
+	errLogger := log.New(os.Stderr, "", log.LstdFlags|log.Lshortfile|log.LUTC)
+
 	// Logger for verbose mode
 	var verboseLogger *log.Logger
 	if *verboseFlag {
@@ -49,12 +52,27 @@ func main() {
 		verboseLogger = log.New(ioutil.Discard, "", 0)
 	}
 
-	ghbackup.Run(ghbackup.Config{
-		Name: args[0],
-		Dir:  args[1],
-		Auth: *auth,
-		// Log errors with line numbers
-		Error:   log.New(os.Stderr, "", log.LstdFlags|log.Lshortfile|log.LUTC),
-		Verbose: verboseLogger,
+	updates := make(chan ghbackup.Update)
+
+	go func() {
+		for u := range updates {
+			switch u.Type {
+			case ghbackup.UErr:
+				errLogger.Println(u.Message)
+			case ghbackup.UInfo:
+				verboseLogger.Println(u.Message)
+			}
+		}
+	}()
+
+	err := ghbackup.Run(ghbackup.Config{
+		Name:    args[0],
+		Dir:     args[1],
+		Auth:    *auth,
+		Updates: updates,
 	})
+	if err != nil {
+		errLogger.Println(err)
+		os.Exit(1)
+	}
 }

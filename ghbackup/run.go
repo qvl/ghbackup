@@ -3,7 +3,6 @@ package ghbackup
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -14,18 +13,33 @@ import (
 )
 
 // Config should be passed to Run.
-// Only Name, Dir, Error, Verbose are required.
+// Only Name, Dir, Updates are required.
 type Config struct {
 	Name    string
 	Dir     string
-	Error   *log.Logger
-	Verbose *log.Logger
+	Updates chan Update
 	// Optional:
 	Auth       string
 	API        string
 	Workers    int
 	HTTPClient *http.Client
 }
+
+// Update is the format of updates emitted while running.
+type Update struct {
+	Type    UpdateType
+	Message string
+}
+
+// UpdateType helps you to decide what to do with an Update .
+type UpdateType int
+
+const (
+	// UErr occurs when something went wrong, but the backup can keep running.
+	UErr UpdateType = iota
+	// UInfo contains progress information that could be optionally logged.
+	UInfo
+)
 
 type repo struct {
 	Name string
@@ -36,7 +50,7 @@ const defaultMaxWorkers = 10
 const defaultAPI = "https://api.github.com"
 
 // Run update for the given Config.
-func Run(config Config) {
+func Run(config Config) error {
 	// Defaults
 	if config.Workers == 0 {
 		config.Workers = defaultMaxWorkers
@@ -51,13 +65,13 @@ func Run(config Config) {
 	// Fetch list of repositories
 	u, err := getURL(config.Name, config.API, config.HTTPClient)
 	if err != nil {
-		config.Error.Fatal(err)
+		return err
 	}
 	repos, err := getRepos(u, config.HTTPClient, config.Auth)
 	if err != nil {
-		config.Error.Fatal(err)
+		return err
 	}
-	config.Verbose.Println("Backup for", config.Name, "with", len(repos), "repositories")
+	config.Updates <- Update{UInfo, fmt.Sprintf("Backup for %s with %d repositories", config.Name, len(repos))}
 
 	// Backup repositories in parallel
 	jobs := make(chan repo)
@@ -74,9 +88,9 @@ func Run(config Config) {
 		go func() {
 			defer wg.Done()
 			for r := range jobs {
-				err := backupRepo(config.Dir, r, config.Verbose)
+				err := backupRepo(config.Dir, r, config.Updates)
 				if err != nil {
-					config.Error.Println(err)
+					config.Updates <- Update{UErr, err.Error()}
 				}
 			}
 		}()
@@ -87,6 +101,8 @@ func Run(config Config) {
 	}
 	close(jobs)
 	wg.Wait()
+
+	return nil
 }
 
 func getURL(account, api string, httpClient *http.Client) (string, error) {
@@ -190,7 +206,7 @@ func setMaxPageSize(rawURL string) (string, error) {
 }
 
 // Clone new repo or pull in existing repo
-func backupRepo(backupDir string, r repo, info *log.Logger) error {
+func backupRepo(backupDir string, r repo, updates chan Update) error {
 	repoDir := path.Join(backupDir, r.Name)
 
 	var cmd *exec.Cmd
@@ -199,11 +215,11 @@ func backupRepo(backupDir string, r repo, info *log.Logger) error {
 		return fmt.Errorf("cannot check if repo exists: %v", err)
 	}
 	if repoExists {
-		info.Println("Updating	", r.Name)
+		updates <- Update{UInfo, fmt.Sprintf("Updating	%s", r.Name)}
 		cmd = exec.Command("git", "pull")
 		cmd.Dir = repoDir
 	} else {
-		info.Println("Cloning	", r.Name)
+		updates <- Update{UInfo, fmt.Sprintf("Cloning	%s", r.Name)}
 		cmd = exec.Command("git", "clone", r.URL, repoDir)
 	}
 
