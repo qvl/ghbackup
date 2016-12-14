@@ -19,10 +19,16 @@ type Config struct {
 	Dir     string
 	Updates chan Update
 	// Optional:
-	Auth       string
-	API        string
-	Workers    int
-	HTTPClient *http.Client
+	Auth    string
+	API     string
+	Workers int
+	Doer
+}
+
+// Doer makes HTTP requests.
+// http.HTTPClient implements Doer but simpler implementations can be used too.
+type Doer interface {
+	Do(*http.Request) (*http.Response, error)
 }
 
 // Update is the format of updates emitted while running.
@@ -58,16 +64,16 @@ func Run(config Config) error {
 	if config.API == "" {
 		config.API = defaultAPI
 	}
-	if config.HTTPClient == nil {
-		config.HTTPClient = http.DefaultClient
+	if config.Doer == nil {
+		config.Doer = http.DefaultClient
 	}
 
 	// Fetch list of repositories
-	u, err := getURL(config.Name, config.API, config.HTTPClient)
+	u, err := getURL(config.Name, config.API, config.Doer)
 	if err != nil {
 		return err
 	}
-	repos, err := getRepos(u, config.HTTPClient, config.Auth)
+	repos, err := getRepos(u, config.Auth, config.Doer)
 	if err != nil {
 		return err
 	}
@@ -105,8 +111,8 @@ func Run(config Config) error {
 	return nil
 }
 
-func getURL(account, api string, httpClient *http.Client) (string, error) {
-	category, err := getCategory(account, api, httpClient)
+func getURL(account, api string, doer Doer) (string, error) {
+	category, err := getCategory(account, api, doer)
 	if err != nil {
 		return "", err
 	}
@@ -114,8 +120,12 @@ func getURL(account, api string, httpClient *http.Client) (string, error) {
 }
 
 // Returns "users" or "orgs" depending on type of account
-func getCategory(name, api string, client *http.Client) (string, error) {
-	res, err := client.Get(strings.Join([]string{api, "users", name}, "/"))
+func getCategory(name, api string, doer Doer) (string, error) {
+	req, err := http.NewRequest("GET", strings.Join([]string{api, "users", name}, "/"), nil)
+	if err != nil {
+		return "", fmt.Errorf("cannot create HTTP request: %v", err)
+	}
+	res, err := doer.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("cannot get user info: %v", err)
 	}
@@ -145,7 +155,7 @@ func getCategory(name, api string, client *http.Client) (string, error) {
 
 // Get repositories from Github.
 // Follow all "next" links.
-func getRepos(u string, client *http.Client, auth string) ([]repo, error) {
+func getRepos(u, auth string, doer Doer) ([]repo, error) {
 	var allRepos []repo
 
 	// Go through all pages
@@ -158,7 +168,7 @@ func getRepos(u string, client *http.Client, auth string) ([]repo, error) {
 			parts := strings.Split(auth, ":")
 			req.SetBasicAuth(parts[0], parts[1])
 		}
-		res, err := client.Do(req)
+		res, err := doer.Do(req)
 		if err != nil {
 			return nil, fmt.Errorf("cannot get repos: %v", err)
 		}
