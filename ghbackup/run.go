@@ -226,11 +226,11 @@ func backupRepo(backupDir string, r repo, updates chan Update) error {
 	}
 	if repoExists {
 		updates <- Update{UInfo, fmt.Sprintf("Updating	%s", r.Name)}
-		cmd = exec.Command("git", "pull")
+		cmd = exec.Command("git", "remote", "update")
 		cmd.Dir = repoDir
 	} else {
 		updates <- Update{UInfo, fmt.Sprintf("Cloning	%s", r.Name)}
-		cmd = exec.Command("git", "clone", r.URL, repoDir)
+		cmd = exec.Command("git", "clone", "--mirror", "--no-checkout", r.URL, repoDir)
 	}
 
 	err = cmd.Run()
