@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -13,13 +12,13 @@ import (
 )
 
 // Config should be passed to Run.
-// Only Name, Dir, Updates are required.
+// Only Account, Dir, Updates are required.
 type Config struct {
-	Name    string
+	Account string
 	Dir     string
 	Updates chan Update
 	// Optional:
-	Auth    string
+	Secret  string
 	API     string
 	Workers int
 	Doer
@@ -69,15 +68,15 @@ func Run(config Config) error {
 	}
 
 	// Fetch list of repositories
-	u, err := getURL(config.Name, config.API, config.Doer)
+	u, err := getURL(config.Account, config.API, config.Doer)
 	if err != nil {
 		return err
 	}
-	repos, err := getRepos(u, config.Auth, config.Doer)
+	repos, err := getRepos(u, config.Account, config.Secret, config.Doer)
 	if err != nil {
 		return err
 	}
-	config.Updates <- Update{UInfo, fmt.Sprintf("Backup for %s with %d repositories", config.Name, len(repos))}
+	config.Updates <- Update{UInfo, fmt.Sprintf("Backup for %s with %d repositories", config.Account, len(repos))}
 
 	// Backup repositories in parallel
 	jobs := make(chan repo)
@@ -116,12 +115,13 @@ func getURL(account, api string, doer Doer) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return setMaxPageSize(api + "/" + category + "/" + account + "/repos?type=owner")
+	url := api + "/" + category + "/" + account + "/repos?per_page=100&type=owner"
+	return url, nil
 }
 
 // Returns "users" or "orgs" depending on type of account
-func getCategory(name, api string, doer Doer) (string, error) {
-	req, err := http.NewRequest("GET", strings.Join([]string{api, "users", name}, "/"), nil)
+func getCategory(account, api string, doer Doer) (string, error) {
+	req, err := http.NewRequest("GET", strings.Join([]string{api, "users", account}, "/"), nil)
 	if err != nil {
 		return "", fmt.Errorf("cannot create HTTP request: %v", err)
 	}
@@ -136,37 +136,36 @@ func getCategory(name, api string, doer Doer) (string, error) {
 		return "", fmt.Errorf("bad response from %s: %v", res.Request.URL, res.Status)
 	}
 
-	var account struct {
+	var a struct {
 		Type string
 	}
-	err = json.NewDecoder(res.Body).Decode(&account)
+	err = json.NewDecoder(res.Body).Decode(&a)
 	if err != nil {
 		return "", fmt.Errorf("cannot decode JSON response: %v", err)
 	}
 
-	if account.Type == "User" {
+	if a.Type == "User" {
 		return "users", nil
 	}
-	if account.Type == "Organization" {
+	if a.Type == "Organization" {
 		return "orgs", nil
 	}
-	return "", fmt.Errorf("unknown type of account %s for name %s", account.Type, name)
+	return "", fmt.Errorf("unknown type of account %s for %s", a.Type, account)
 }
 
 // Get repositories from Github.
 // Follow all "next" links.
-func getRepos(u, auth string, doer Doer) ([]repo, error) {
+func getRepos(url, account, secret string, doer Doer) ([]repo, error) {
 	var allRepos []repo
 
 	// Go through all pages
 	for {
-		req, err := http.NewRequest("GET", u, nil)
+		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
 			return nil, fmt.Errorf("cannot create request: %v", err)
 		}
-		if len(auth) > 0 {
-			parts := strings.Split(auth, ":")
-			req.SetBasicAuth(parts[0], parts[1])
+		if len(secret) > 0 {
+			req.SetBasicAuth(account, secret)
 		}
 		res, err := doer.Do(req)
 		if err != nil {
@@ -197,22 +196,10 @@ func getRepos(u, auth string, doer Doer) ([]repo, error) {
 		}
 		urlInBrackets := strings.Split(firstLink, ";")[0]
 		// Set url for next iteration
-		u = urlInBrackets[1 : len(urlInBrackets)-1]
+		url = urlInBrackets[1 : len(urlInBrackets)-1]
 	}
 
 	return allRepos, nil
-}
-
-//  Adds per_page=100 to a URL
-func setMaxPageSize(rawURL string) (string, error) {
-	u, err := url.Parse(rawURL)
-	if err != nil {
-		return "", fmt.Errorf("cannot parse url: %v", err)
-	}
-	q := u.Query()
-	q.Set("per_page", "100")
-	u.RawQuery = q.Encode()
-	return u.String(), nil
 }
 
 // Clone new repo or pull in existing repo

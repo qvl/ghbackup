@@ -12,21 +12,21 @@ import (
 
 const (
 	// Printed for -help, -h or with wrong number of arguments
-	usage = `Usage: %s name directory
+	usage = `Usage: %s account directory
 
-  name       github user or organization name to get the repositories from
+  account    github user or organization name to get the repositories from
   directory  path to save the repositories to
 
 `
-	authUsage = `Basic auth for Github API as <user>:<password>.
-	Can also use a personal access token instead of password (https://github.com/settings/tokens).
-	Authentication increases rate limiting (https://developer.github.com/v3/#rate-limiting).`
+	secretUsage = `Authentication secret for Github API.
+	Can use the users password or a personal access token (https://github.com/settings/tokens).
+	Authentication increases rate limiting (https://developer.github.com/v3/#rate-limiting) and enables backup of private repositories.`
 )
 
 // Get command line arguments and start updating repositories
 func main() {
 	// Flags
-	auth := flag.String("auth", "", authUsage)
+	secret := flag.String("secret", "", secretUsage)
 	verboseFlag := flag.Bool("verbose", false, "print progress information")
 
 	// Parse args
@@ -66,9 +66,9 @@ func main() {
 	}()
 
 	err := ghbackup.Run(ghbackup.Config{
-		Name:    args[0],
+		Account: args[0],
 		Dir:     args[1],
-		Auth:    *auth,
+		Secret:  *secret,
 		Updates: updates,
 	})
 	if err != nil {
