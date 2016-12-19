@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
 	"sync"
 )
@@ -47,8 +48,8 @@ const (
 )
 
 type repo struct {
-	Name string
-	URL  string `json:"git_url"`
+	Path string `json:"full_name"`
+	URL  string `json:"ssh_url"`
 }
 
 const defaultMaxWorkers = 10
@@ -68,54 +69,82 @@ func Run(config Config) error {
 	}
 
 	// Fetch list of repositories
-	u, err := getURL(config.Account, config.API, config.Doer)
-	if err != nil {
-		return err
-	}
-	repos, err := getRepos(u, config.Account, config.Secret, config.Doer)
+	repos, err := getRepos(config.Account, config.Secret, config.API, config.Doer)
 	if err != nil {
 		return err
 	}
 	config.Updates <- Update{UInfo, fmt.Sprintf("Backup for %s with %d repositories", config.Account, len(repos))}
 
 	// Backup repositories in parallel
-	jobs := make(chan repo)
-
-	workers := config.Workers
-	if len(repos) < workers {
-		workers = len(repos)
-	}
-
-	var wg sync.WaitGroup
-	wg.Add(workers)
-
-	for w := 0; w < workers; w++ {
-		go func() {
-			defer wg.Done()
-			for r := range jobs {
-				err := backupRepo(config.Dir, r, config.Updates)
-				if err != nil {
-					config.Updates <- Update{UErr, err.Error()}
-				}
-			}
-		}()
-	}
-
-	for _, r := range repos {
-		jobs <- r
-	}
-	close(jobs)
-	wg.Wait()
+	each(repos, config.Workers, func(r repo) {
+		err := backupRepo(config.Dir, config.Account, r, config.Updates)
+		if err != nil {
+			config.Updates <- Update{UErr, err.Error()}
+		}
+	})
 
 	return nil
 }
 
-func getURL(account, api string, doer Doer) (string, error) {
-	category, err := getCategory(account, api, doer)
+// Get repositories from Github.
+// Follow all "next" links.
+func getRepos(account, secret, api string, doer Doer) ([]repo, error) {
+	var allRepos []repo
+
+	currentURL, err := getURL(account, secret, api, doer)
 	if err != nil {
-		return "", err
+		return allRepos, err
 	}
-	url := api + "/" + category + "/" + account + "/repos?per_page=100&type=owner"
+
+	// Go through all pages
+	for {
+		req, err := http.NewRequest("GET", currentURL, nil)
+		if err != nil {
+			return nil, fmt.Errorf("cannot create request: %v", err)
+		}
+		if secret != "" {
+			// For token authentication `account` will be ignored
+			req.SetBasicAuth(account, secret)
+		}
+		res, err := doer.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("cannot get repos: %v", err)
+		}
+		defer func() {
+			_ = res.Body.Close()
+		}()
+		if res.StatusCode >= 300 {
+			return nil, fmt.Errorf("bad response from %s: %v", res.Request.URL, res.Status)
+		}
+
+		var repos []repo
+		err = json.NewDecoder(res.Body).Decode(&repos)
+		if err != nil {
+			return nil, fmt.Errorf("cannot decode JSON response: %v", err)
+		}
+
+		allRepos = append(allRepos, selectRepos(repos, account)...)
+
+		// Set url for next iteration
+		currentURL = getNextURL(res.Header)
+
+		// Done if no next URL
+		if currentURL == "" {
+			return allRepos, nil
+		}
+	}
+}
+
+func getURL(account, secret, api string, doer Doer) (string, error) {
+	user := "user"
+	if secret == "" {
+		category, err := getCategory(account, api, doer)
+		if err != nil {
+			return "", err
+		}
+		user = category + "/" + account
+	}
+	url := api + "/" + user + "/repos?per_page=100"
 	return url, nil
 }
 
@@ -153,89 +182,130 @@ func getCategory(account, api string, doer Doer) (string, error) {
 	return "", fmt.Errorf("unknown type of account %s for %s", a.Type, account)
 }
 
-// Get repositories from Github.
-// Follow all "next" links.
-func getRepos(url, account, secret string, doer Doer) ([]repo, error) {
-	var allRepos []repo
+func selectRepos(repos []repo, account string) []repo {
+	if account == "" {
+		return repos
+	}
+	var res []repo
+	for _, r := range repos {
+		if path.Dir(r.Path) == account {
+			res = append(res, r)
+		}
+	}
+	return res
+}
 
-	// Go through all pages
-	for {
-		req, err := http.NewRequest("GET", url, nil)
-		if err != nil {
-			return nil, fmt.Errorf("cannot create request: %v", err)
-		}
-		if len(secret) > 0 {
-			req.SetBasicAuth(account, secret)
-		}
-		res, err := doer.Do(req)
-		if err != nil {
-			return nil, fmt.Errorf("cannot get repos: %v", err)
-		}
-		defer func() {
-			_ = res.Body.Close()
-		}()
-		if res.StatusCode >= 300 {
-			return nil, fmt.Errorf("bad response from %s: %v", res.Request.URL, res.Status)
-		}
+func getNextURL(header http.Header) string {
+	linkHeader := header["Link"]
+	if len(linkHeader) == 0 {
+		return ""
+	}
+	parts := strings.Split(linkHeader[0], ",")
+	if len(parts) == 0 {
+		return ""
+	}
+	firstLink := parts[0]
+	if !strings.Contains(firstLink, "rel=\"next\"") {
+		return ""
+	}
+	parts = strings.Split(firstLink, ";")
+	if len(parts) == 0 {
+		return ""
+	}
+	urlInBrackets := parts[0]
+	if len(urlInBrackets) < 3 {
+		return ""
+	}
+	return urlInBrackets[1 : len(urlInBrackets)-1]
+}
 
-		var repos []repo
-		err = json.NewDecoder(res.Body).Decode(&repos)
-		if err != nil {
-			return nil, fmt.Errorf("cannot decode JSON response: %v", err)
-		}
-
-		allRepos = append(allRepos, repos...)
-
-		linkHeader := res.Header["Link"]
-		if len(linkHeader) == 0 {
-			break
-		}
-		firstLink := strings.Split(linkHeader[0], ",")[0]
-		if !strings.Contains(firstLink, "rel=\"next\"") {
-			break
-		}
-		urlInBrackets := strings.Split(firstLink, ";")[0]
-		// Set url for next iteration
-		url = urlInBrackets[1 : len(urlInBrackets)-1]
+func each(repos []repo, workers int, worker func(repo)) {
+	if len(repos) < workers {
+		workers = len(repos)
 	}
 
-	return allRepos, nil
+	jobs := make(chan repo)
+
+	var wg sync.WaitGroup
+	wg.Add(workers)
+
+	for w := 0; w < workers; w++ {
+		go func() {
+			defer wg.Done()
+			for r := range jobs {
+				worker(r)
+			}
+		}()
+	}
+
+	for _, r := range repos {
+		jobs <- r
+	}
+	close(jobs)
+	wg.Wait()
 }
 
 // Clone new repo or pull in existing repo
-func backupRepo(backupDir string, r repo, updates chan Update) error {
-	repoDir := path.Join(backupDir, r.Name)
+func backupRepo(backupDir, account string, r repo, updates chan Update) error {
+	repoDir, err := getRepoDir(backupDir, r.Path, account)
+	if err != nil {
+		return fmt.Errorf("cannot get repo dir: %v", err)
+	}
 
-	var cmd *exec.Cmd
 	repoExists, err := exists(repoDir)
 	if err != nil {
 		return fmt.Errorf("cannot check if repo exists: %v", err)
 	}
+
+	var cmd *exec.Cmd
 	if repoExists {
-		updates <- Update{UInfo, fmt.Sprintf("Updating	%s", r.Name)}
+		updates <- Update{UInfo, fmt.Sprintf("Updating	%s", r.Path)}
 		cmd = exec.Command("git", "remote", "update")
 		cmd.Dir = repoDir
 	} else {
-		updates <- Update{UInfo, fmt.Sprintf("Cloning	%s", r.Name)}
+		updates <- Update{UInfo, fmt.Sprintf("Cloning	%s", r.Path)}
 		cmd = exec.Command("git", "clone", "--mirror", "--no-checkout", r.URL, repoDir)
 	}
 
-	err = cmd.Run()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		// Give enough information to reproduce command
-		return fmt.Errorf("error running command `%v` (`%v`) in dir `%v` with env `%v`: %v", cmd.Args, cmd.Path, cmd.Dir, cmd.Env, err)
+		return fmt.Errorf("error running command %v (%v): %v (%v)", cmd.Args, cmd.Path, string(out), err)
 	}
 	return nil
 }
 
+func getRepoDir(backupDir, repoPath, account string) (string, error) {
+	base := path.Base(repoPath)
+
+	// For single account, skip sub-directories
+	if account != "" {
+		return filepath.Join(backupDir, base), nil
+	}
+
+	// Ensure account directory
+	parent := filepath.Join(backupDir, path.Dir(repoPath))
+	parentExists, err := exists(parent)
+	if err != nil {
+		return "", err
+	}
+	if !parentExists {
+		err := os.Mkdir(parent, 0755)
+		if err != nil {
+			return "", fmt.Errorf("cannot create parent dir: %v", err)
+		}
+	}
+
+	return filepath.Join(parent, base), nil
+}
+
 // Check if a file or directory exists
-func exists(path string) (bool, error) {
-	_, err := os.Stat(path)
+func exists(f string) (bool, error) {
+	_, err := os.Stat(f)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false, nil
 		}
-		return false, fmt.Errorf("cannot get stats for path `%s`: %v", path, err)
+		return false, fmt.Errorf("cannot get stats for path `%s`: %v", f, err)
 	}
 	return true, nil
 }
