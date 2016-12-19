@@ -6,15 +6,20 @@
 
 Embarrassing simple Github backup tool
 
-    Usage: ghbackup name directory
+    Usage: ghbackup [flags] directory
 
-      name       github user or organization name to get the repositories from
       directory  path to save the repositories to
 
-      -auth string
-            Authentication for Github as <user>:<password>.
-            Can also use a personal access token instead of password (https://github.com/settings/tokens).
-            Authentication increases rate limiting (https://developer.github.com/v3/#rate-limiting).`
+
+      At least one of -account or -secret must be specified.
+
+      -account string
+            Github user or organization name to get repositories from.
+            If not specified, all repositories the authenticated user has access to will be loaded.
+      -secret string
+            Authentication secret for Github API.
+            Can use the users password or a personal access token (https://github.com/settings/tokens).
+            Authentication increases rate limiting (https://developer.github.com/v3/#rate-limiting) and enables backup of private repositories.
       -verbose
             print progress information
 
@@ -45,13 +50,13 @@ Let's setup `ghbackup` on a Linux server and make it run daily at 1am. This work
 - Add a new line and replace `NAME` and `DIR` with your options:
 
 ``` sh
-0 1 * * * ghbackup NAME DIR
+0 1 * * * ghbackup -account NAME DIR
 ```
 
 For example:
 
 ``` sh
-0 1 * * * ghbackup qvl /home/qvl/backup-qvl
+0 1 * * * ghbackup -account qvl /home/qvl/backup-qvl
 ```
 
 

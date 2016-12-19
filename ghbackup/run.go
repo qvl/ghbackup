@@ -73,7 +73,7 @@ func Run(config Config) error {
 	if err != nil {
 		return err
 	}
-	config.Updates <- Update{UInfo, fmt.Sprintf("Backup for %s with %d repositories", config.Account, len(repos))}
+	config.Updates <- Update{UInfo, fmt.Sprintf("Backup %d repositories", len(repos))}
 
 	// Backup repositories in parallel
 	each(repos, config.Workers, func(r repo) {
@@ -247,10 +247,7 @@ func each(repos []repo, workers int, worker func(repo)) {
 
 // Clone new repo or pull in existing repo
 func backupRepo(backupDir, account string, r repo, updates chan Update) error {
-	repoDir, err := getRepoDir(backupDir, r.Path, account)
-	if err != nil {
-		return fmt.Errorf("cannot get repo dir: %v", err)
-	}
+	repoDir := getRepoDir(backupDir, r.Path, account)
 
 	repoExists, err := exists(repoDir)
 	if err != nil {
@@ -274,28 +271,13 @@ func backupRepo(backupDir, account string, r repo, updates chan Update) error {
 	return nil
 }
 
-func getRepoDir(backupDir, repoPath, account string) (string, error) {
-	base := path.Base(repoPath)
-
+func getRepoDir(backupDir, repoPath, account string) string {
+	repoGit := repoPath + ".git"
 	// For single account, skip sub-directories
 	if account != "" {
-		return filepath.Join(backupDir, base), nil
+		return filepath.Join(backupDir, path.Base(repoGit))
 	}
-
-	// Ensure account directory
-	parent := filepath.Join(backupDir, path.Dir(repoPath))
-	parentExists, err := exists(parent)
-	if err != nil {
-		return "", err
-	}
-	if !parentExists {
-		err := os.Mkdir(parent, 0755)
-		if err != nil {
-			return "", fmt.Errorf("cannot create parent dir: %v", err)
-		}
-	}
-
-	return filepath.Join(parent, base), nil
+	return filepath.Join(backupDir, repoGit)
 }
 
 // Check if a file or directory exists
