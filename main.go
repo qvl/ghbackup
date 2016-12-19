@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -41,26 +40,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Log errors with line numbers
-	errLogger := log.New(os.Stderr, "", log.LstdFlags|log.Lshortfile|log.LUTC)
-
-	// Logger for verbose mode
-	var verboseLogger *log.Logger
-	if *verboseFlag {
-		verboseLogger = log.New(os.Stderr, "", log.LstdFlags|log.LUTC)
-	} else {
-		verboseLogger = log.New(ioutil.Discard, "", 0)
-	}
-
 	updates := make(chan ghbackup.Update)
 
 	go func() {
 		for u := range updates {
 			switch u.Type {
 			case ghbackup.UErr:
-				errLogger.Println(u.Message)
+				log.Println(u.Message)
 			case ghbackup.UInfo:
-				verboseLogger.Println(u.Message)
+				if *verboseFlag {
+					log.Println(u.Message)
+				}
 			}
 		}
 	}()
@@ -72,7 +62,7 @@ func main() {
 		Updates: updates,
 	})
 	if err != nil {
-		errLogger.Println(err)
+		log.Println(err)
 		os.Exit(1)
 	}
 }
