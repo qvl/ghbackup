@@ -62,7 +62,7 @@ For example:
 
 ## What happens?
 
-Get all repositories of a Github user.
+Get all repositories of a Github account.
 Save them to a folder.
 Update already cloned repositories.
 
@@ -71,10 +71,8 @@ Best served as a scheduled job to keep your backups up to date!
 
 ## Limits
 
-It's repos only. And public only.
-If you are more serious about it pick one of the fancy solutions out there
-and backup your issues and wikis and private stuff.
-Or fork me!
+`ghbackup` is about repositories.
+There are other solutions if you like to backup issues and wikis.
 
 
 ## Use as Go package
