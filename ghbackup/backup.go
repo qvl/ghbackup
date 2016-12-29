@@ -2,6 +2,7 @@ package ghbackup
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -9,7 +10,7 @@ import (
 )
 
 // Clone new repo or pull in existing repo
-func backup(backupDir, account string, r repo, updates chan Update) error {
+func backup(backupDir, account, secret string, r repo, updates chan Update) error {
 	repoDir := getRepoDir(backupDir, r.Path, account)
 
 	repoExists, err := exists(repoDir)
@@ -24,7 +25,7 @@ func backup(backupDir, account string, r repo, updates chan Update) error {
 		cmd.Dir = repoDir
 	} else {
 		updates <- Update{UInfo, fmt.Sprintf("Cloning	%s", r.Path)}
-		cmd = exec.Command("git", "clone", "--mirror", "--no-checkout", r.URL, repoDir)
+		cmd = exec.Command("git", "clone", "--mirror", "--no-checkout", getCloneURL(r, secret), repoDir)
 	}
 
 	out, err := cmd.CombinedOutput()
@@ -53,4 +54,19 @@ func exists(f string) (bool, error) {
 		return false, fmt.Errorf("cannot get stats for path `%s`: %v", f, err)
 	}
 	return true, nil
+}
+
+// Add secret token to URL of private repos.
+// Allows cloning without manual authentication or SSH setup.
+// However, this saves the secret in the git config file.
+func getCloneURL(r repo, secret string) string {
+	if !r.Private {
+		return r.URL
+	}
+	u, err := url.Parse(r.URL)
+	if err != nil {
+		return ""
+	}
+	u.User = url.User(secret)
+	return u.String()
 }

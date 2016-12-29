@@ -28,7 +28,7 @@ func Run(config Config) error {
 
 	// Backup repositories in parallel
 	each(repos, config.Workers, func(r repo) {
-		err := backup(config.Dir, config.Account, r, config.Updates)
+		err := backup(config.Dir, config.Account, config.Secret, r, config.Updates)
 		if err != nil {
 			config.Updates <- Update{UErr, err.Error()}
 		}
