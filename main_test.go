@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"io/ioutil"
+	"os"
 	"os/exec"
 	"testing"
 )
@@ -40,10 +42,33 @@ func TestHelp(t *testing.T) {
 		if stdout != "" {
 			t.Error("Unexpected stdout:", stdout)
 		}
-
 		if stderr != help {
 			t.Error("Unexpected stderr:", stderr)
 		}
+	}
+}
+
+func TestRun(t *testing.T) {
+	dir, err := ioutil.TempDir("", "qvl-backup")
+	if err != nil {
+		t.Error(err)
+	}
+	defer func() {
+		err := os.RemoveAll(dir)
+		if err != nil {
+			t.Error(err)
+		}
+	}()
+
+	stdout, stderr, ok := run([]string{"-account", "qvl", dir})
+	if !ok {
+		t.Error("Non-zero exit code")
+	}
+	if stdout != "" {
+		t.Error("Unexpected stdout:", stdout)
+	}
+	if stderr != "" {
+		t.Error("Unexpected stderr:", stderr)
 	}
 }
 

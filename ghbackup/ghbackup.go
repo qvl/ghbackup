@@ -39,7 +39,7 @@ const (
 
 type repo struct {
 	Path string `json:"full_name"`
-	URL  string `json:"ssh_url"`
+	URL  string `json:"clone_url"`
 }
 
 const defaultMaxWorkers = 10
