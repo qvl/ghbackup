@@ -1,6 +1,7 @@
 #  :floppy_disk: ghbackup
 
 [![GoDoc](https://godoc.org/qvl.io/ghbackup?status.svg)](https://godoc.org/qvl.io/ghbackup)
+[![Build Status](https://travis-ci.org/qvl/ghbackup.svg?branch=master)](https://travis-ci.org/qvl/ghbackup)
 [![Go Report Card](https://goreportcard.com/badge/github.com/qvl/ghbackup)](https://goreportcard.com/report/github.com/qvl/ghbackup)
 
 
