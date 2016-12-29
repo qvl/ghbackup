@@ -60,7 +60,17 @@ func TestRun(t *testing.T) {
 		}
 	}()
 
-	stdout, stderr, ok := run([]string{"-account", "qvl", dir})
+	// Use secret from environment if available.
+	// Prevents rate limiting on CI server.
+	secret := os.Getenv("SECRET")
+	var args []string
+	if secret == "" {
+		args = []string{"-account", "qvl", dir}
+	} else {
+		args = []string{"-account", "qvl", "-secret", secret, dir}
+	}
+
+	stdout, stderr, ok := run(args)
 	if !ok {
 		t.Error("Non-zero exit code")
 	}
