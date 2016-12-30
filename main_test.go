@@ -1,9 +1,7 @@
-package main
+package main_test
 
 import (
 	"bytes"
-	"io/ioutil"
-	"os"
 	"os/exec"
 	"testing"
 )
@@ -45,40 +43,6 @@ func TestHelp(t *testing.T) {
 		if stderr != help {
 			t.Error("Unexpected stderr:", stderr)
 		}
-	}
-}
-
-func TestRun(t *testing.T) {
-	dir, err := ioutil.TempDir("", "qvl-backup")
-	if err != nil {
-		t.Error(err)
-	}
-	defer func() {
-		err := os.RemoveAll(dir)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
-
-	// Use secret from environment if available.
-	// Prevents rate limiting on CI server.
-	secret := os.Getenv("SECRET")
-	var args []string
-	if secret == "" {
-		args = []string{"-account", "qvl", dir}
-	} else {
-		args = []string{"-account", "qvl", "-secret", secret, dir}
-	}
-
-	stdout, stderr, ok := run(args)
-	if !ok {
-		t.Error("Non-zero exit code")
-	}
-	if stdout != "" {
-		t.Error("Unexpected stdout:", stdout)
-	}
-	if stderr != "" {
-		t.Error("Unexpected stderr:", stderr)
 	}
 }
 
