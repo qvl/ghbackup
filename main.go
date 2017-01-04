@@ -11,14 +11,17 @@ import (
 
 const (
 	// Printed for -help, -h or with wrong number of arguments
-	usage = `Usage: %s [flags] directory
+	usage = `Embarrassing simple Github backup tool
+
+Usage: %s [flags] directory
 
   directory  path to save the repositories to
 
+At least one of -account or -secret must be specified.
 
-  At least one of -account or -secret must be specified.
-
+Flags:
 `
+	more         = "\nFor more visit https://qvl.io/ghbackup."
 	accountUsage = `Github user or organization name to get repositories from.
 	If not specified, all repositories the authenticated user has access to will be loaded.`
 	secretUsage = `Authentication secret for Github API.
@@ -37,6 +40,7 @@ func main() {
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, usage, os.Args[0])
 		flag.PrintDefaults()
+		fmt.Fprintln(os.Stderr, more)
 	}
 	flag.Parse()
 	args := flag.Args()

@@ -2,27 +2,32 @@
 
 [![GoDoc](https://godoc.org/qvl.io/ghbackup?status.svg)](https://godoc.org/qvl.io/ghbackup)
 [![Build Status](https://travis-ci.org/qvl/ghbackup.svg?branch=master)](https://travis-ci.org/qvl/ghbackup)
-[![Go Report Card](https://goreportcard.com/badge/github.com/qvl/ghbackup)](https://goreportcard.com/report/github.com/qvl/ghbackup)
+[![Go Report Card](https://goreportcard.com/badge/qvl.io/ghbackup)](https://goreportcard.com/report/qvl.io/ghbackup)
 
 
-Embarrassing simple Github backup tool
+    Embarrassing simple Github backup tool
 
     Usage: ghbackup [flags] directory
 
       directory  path to save the repositories to
 
+    At least one of -account or -secret must be specified.
 
-      At least one of -account or -secret must be specified.
-
+    Flags:
       -account string
             Github user or organization name to get repositories from.
-            If not specified, all repositories the authenticated user has access to will be loaded.
+            If not specified, all repositories the authenticated user has access to
+    will be loaded.
       -secret string
             Authentication secret for Github API.
-            Can use the users password or a personal access token (https://github.com/settings/tokens).
-            Authentication increases rate limiting (https://developer.github.com/v3/#rate-limiting) and enables backup of private repositories.
+            Can use the users password or a personal access token (https://github.c
+    om/settings/tokens).
+            Authentication increases rate limiting (https://developer.github.com/v3
+    /#rate-limiting) and enables backup of private repositories.
       -verbose
             print progress information
+
+    For more visit https://qvl.io/ghbackup.
 
 
 ## Install
