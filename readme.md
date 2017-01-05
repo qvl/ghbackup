@@ -32,9 +32,17 @@
 
 ## Install
 
-- Via [Go](https://golang.org/) setup: `go get qvl.io/ghbackup`
+- With [Go](https://golang.org/):
+```
+go get qvl.io/ghbackup
+```
 
-- Or download latest binary: https://github.com/qvl/ghbackup/releases
+- With [Homebrew](http://brew.sh/):
+```
+brew install qvl/tap/ghbackup
+```
+
+- Download binary: https://github.com/qvl/ghbackup/releases
 
 
 ## Setup
@@ -93,7 +101,7 @@ Make sure to use `gofmt` and create a [Pull Request](https://github.com/qvl/ghba
 
 ### Releasing
 
-Run `./release.sh <version>` and upload the binaries on Github.
+Push a new Git tag and [GoReleaser](https://github.com/goreleaser/releaser) will automatically create a release.
 
 
 ## License

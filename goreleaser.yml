@@ -1,0 +1,15 @@
+repo: qvl/ghbackup
+binary_name: ghbackup
+brew:
+  repo: qvl/brew
+build:
+  arches:
+    - amd64
+    - 386
+  oses:
+    - windows
+    - darwin
+    - linux
+files:
+  - readme.md
+  - license

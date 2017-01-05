@@ -10,3 +10,6 @@ matrix:
   allow_failures:
     - go: tip
   fast_finish: true
+after_success:
+  - go get github.com/goreleaser/releaser
+  - test -n "$TRAVIS_TAG" && releaser
