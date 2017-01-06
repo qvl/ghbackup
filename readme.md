@@ -30,6 +30,15 @@
     For more visit https://qvl.io/ghbackup.
 
 
+The simplest way to keep your repositories save:
+
+1. [Install](#install) `ghbackup`
+1. Get a token from https://github.com/settings/tokens
+2. `ghbackup -secret token /path/to/backup/dir`
+
+This will backup all repositories you have access to.
+
+
 ## Install
 
 - With [Go](https://golang.org/):
@@ -45,7 +54,7 @@ brew install qvl/tap/ghbackup
 - Download binary: https://github.com/qvl/ghbackup/releases
 
 
-## Setup
+## Automation
 
 Mostly, we like to setup backups to run automatically in an interval.
 There are different tools to do this:
