@@ -34,7 +34,7 @@ func main() {
 	// Flags
 	account := flag.String("account", "", accountUsage)
 	secret := flag.String("secret", "", secretUsage)
-	verbose := flag.Bool("verbose", false, "print progress information")
+	silent := flag.Bool("silent", false, "Surpress all output")
 
 	// Parse args
 	flag.Usage = func() {
@@ -57,7 +57,7 @@ func main() {
 			case ghbackup.UErr:
 				log.Println(u.Message)
 			case ghbackup.UInfo:
-				if *verbose {
+				if !*silent {
 					log.Println(u.Message)
 				}
 			}

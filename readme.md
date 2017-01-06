@@ -24,8 +24,8 @@
     om/settings/tokens).
             Authentication increases rate limiting (https://developer.github.com/v3
     /#rate-limiting) and enables backup of private repositories.
-      -verbose
-            print progress information
+      -silent
+            Surpress all output
 
     For more visit https://qvl.io/ghbackup.
 
