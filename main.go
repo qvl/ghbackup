@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 
 	"qvl.io/ghbackup/ghbackup"
 )
+
+const version = "v1.2"
 
 const (
 	// Printed for -help, -h or with wrong number of arguments
@@ -34,6 +37,7 @@ func main() {
 	// Flags
 	account := flag.String("account", "", accountUsage)
 	secret := flag.String("secret", "", secretUsage)
+	versionFlag := flag.Bool("version", false, "Print binary version")
 	silent := flag.Bool("silent", false, "Surpress all output")
 
 	// Parse args
@@ -43,6 +47,12 @@ func main() {
 		fmt.Fprintln(os.Stderr, more)
 	}
 	flag.Parse()
+
+	if *versionFlag {
+		fmt.Printf("ghbackup %s %s %s\n", version, runtime.GOOS, runtime.GOARCH)
+		os.Exit(0)
+	}
+
 	args := flag.Args()
 	if len(args) != 1 || (*account == "" && *secret == "") {
 		flag.Usage()
