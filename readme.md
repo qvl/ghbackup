@@ -26,6 +26,8 @@
     /#rate-limiting) and enables backup of private repositories.
       -silent
             Surpress all output
+      -version
+          Print binary version
 
     For more visit https://qvl.io/ghbackup.
 
