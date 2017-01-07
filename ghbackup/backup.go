@@ -20,11 +20,11 @@ func backup(backupDir, account, secret string, r repo, updates chan Update) erro
 
 	var cmd *exec.Cmd
 	if repoExists {
-		updates <- Update{UInfo, fmt.Sprintf("Updating	%s", r.Path)}
+		updates <- Update{UInfo, fmt.Sprintf("Updating %s", r.Path)}
 		cmd = exec.Command("git", "remote", "update")
 		cmd.Dir = repoDir
 	} else {
-		updates <- Update{UInfo, fmt.Sprintf("Cloning	%s", r.Path)}
+		updates <- Update{UInfo, fmt.Sprintf("Cloning %s", r.Path)}
 		cmd = exec.Command("git", "clone", "--mirror", "--no-checkout", getCloneURL(r, secret), repoDir)
 	}
 

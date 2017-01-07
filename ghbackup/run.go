@@ -24,7 +24,8 @@ func Run(config Config) error {
 	if err != nil {
 		return err
 	}
-	config.Updates <- Update{UInfo, fmt.Sprintf("Backup %d repositories", len(repos))}
+
+	config.Updates <- Update{UInfo, fmt.Sprintf("%d repositories:", len(repos))}
 
 	// Backup repositories in parallel
 	each(repos, config.Workers, func(r repo) {
@@ -33,6 +34,8 @@ func Run(config Config) error {
 			config.Updates <- Update{UErr, err.Error()}
 		}
 	})
+
+	config.Updates <- Update{UInfo, "All done."}
 
 	return nil
 }
