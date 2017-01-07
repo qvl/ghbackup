@@ -59,17 +59,53 @@ brew install qvl/tap/ghbackup
 ## Automation
 
 Mostly, we like to setup backups to run automatically in an interval.
+
+Let's setup `ghbackup` on a Linux server and make it run daily at 1am. This works similar on other platforms.
 There are different tools to do this:
+
+
+### Systemd and sleepto
+
+[Systemd](https://en.wikipedia.org/wiki/Systemd) runs on most Linux systems and using [sleepto](https://qvl.io/sleepto) it's easy to create a service to schedule a backup.
+
+1. Create a new unit file:
+``` sh
+sudo touch /etc/systemd/system/ghbackup.service && sudo chmod 644 $_
+```
+
+2. Edit file:
+```
+[Unit]
+Description=Github backup
+After=network.target
+
+[Service]
+User=jorin
+ExecStart=/PATH/TO/sleepto -hour 1 /PATH/TO/ghbackup -account qvl /home/USER/github
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+3. Replace the paths with your options.
+
+4. Start service and enable it on boot:
+``` sh
+sudo systemctl daemon-reload
+sudo systemctl start ghbackup
+sudo systemctl enable ghbackup
+```
+
+5. Check if service is running:
+``` sh
+systemctl status ghbackup
+```
+
 
 ### Cron
 
 Cron is a job scheduler that already runs on most Unix systems.
-
-Let's setup `ghbackup` on a Linux server and make it run daily at 1am. This works similar on other platforms.
-
-1. Install `ghbackup`: `go get qvl.io/ghbackup`
-
-2. Setup Cron job
 
 - Run `crontab -e`
 - Add a new line and replace `NAME` and `DIR` with your options:
