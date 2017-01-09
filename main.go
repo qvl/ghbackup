@@ -10,7 +10,8 @@ import (
 	"qvl.io/ghbackup/ghbackup"
 )
 
-const version = "v1.2"
+// Can be set in build step using -ldflags
+var version string
 
 const (
 	// Printed for -help, -h or with wrong number of arguments
