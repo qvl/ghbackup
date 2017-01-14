@@ -1,3 +1,6 @@
+// Package ghbackup provides access to run all the functionality of ghbackup.
+// The binary is just a wrapper around the Run function of package ghbackup.
+// This way you can directly use it from any other Go program.
 package ghbackup
 
 import "net/http"

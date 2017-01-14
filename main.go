@@ -1,3 +1,5 @@
+// Package main is the entry point for the ghbackup binary.
+// Here is where you can find argument parsing, usage information and the actual execution.
 package main
 
 import (
