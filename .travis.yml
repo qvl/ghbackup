@@ -1,8 +1,6 @@
 language: go
 go:
-  - 1.6.4
   - 1.7.4
-  - tip
 os:
   - linux
   - osx
@@ -11,4 +9,5 @@ matrix:
     - go: tip
   fast_finish: true
 after_success:
-  test -n "$TRAVIS_TAG" && go get github.com/goreleaser/releaser && releaser
+  # Only release tag on Linux
+  test "$TRAVIS_OS_NAME" != "osx" && test -n "$TRAVIS_TAG" && go get github.com/goreleaser/goreleaser && goreleaser
