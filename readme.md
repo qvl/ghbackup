@@ -5,7 +5,7 @@
 [![Go Report Card](https://goreportcard.com/badge/qvl.io/ghbackup)](https://goreportcard.com/report/qvl.io/ghbackup)
 
 
-    Embarrassing simple Github backup tool
+    Embarrassing simple GitHub backup tool
 
     Usage: ghbackup [flags] directory
 
@@ -15,19 +15,19 @@
 
     Flags:
       -account string
-            Github user or organization name to get repositories from.
+            GitHub user or organization name to get repositories from.
             If not specified, all repositories the authenticated user has access to
     will be loaded.
       -secret string
-            Authentication secret for Github API.
+            Authentication secret for GitHub API.
             Can use the users password or a personal access token (https://github.c
     om/settings/tokens).
             Authentication increases rate limiting (https://developer.github.com/v3
     /#rate-limiting) and enables backup of private repositories.
       -silent
-            Surpress all output
+            Suppress all output
       -version
-          Print binary version
+            Print binary version
 
     For more visit https://qvl.io/ghbackup.
 
@@ -64,19 +64,19 @@ Let's setup `ghbackup` on a Linux server and make it run daily at 1am. This work
 There are different tools to do this:
 
 
-### Systemd and sleepto
+### systemd and sleepto
 
-[Systemd](https://en.wikipedia.org/wiki/Systemd) runs on most Linux systems and using [sleepto](https://qvl.io/sleepto) it's easy to create a service to schedule a backup.
+[systemd](https://freedesktop.org/wiki/Software/systemd/) runs on most Linux systems and using [sleepto](https://qvl.io/sleepto) it's easy to create a service to schedule a backup.
 
-1. Create a new unit file:
+- Create a new unit file:
 ``` sh
 sudo touch /etc/systemd/system/ghbackup.service && sudo chmod 644 $_
 ```
 
-2. Edit file:
+- Edit file:
 ```
 [Unit]
-Description=Github backup
+Description=GitHub backup
 After=network.target
 
 [Service]
@@ -88,16 +88,16 @@ Restart=always
 WantedBy=multi-user.target
 ```
 
-3. Replace the paths with your options.
+- Replace the paths with your options.
 
-4. Start service and enable it on boot:
+- Start service and enable it on boot:
 ``` sh
 sudo systemctl daemon-reload
 sudo systemctl start ghbackup
 sudo systemctl enable ghbackup
 ```
 
-5. Check if service is running:
+- Check if service is running:
 ``` sh
 systemctl status ghbackup
 ```
@@ -123,7 +123,7 @@ For example:
 
 ## What happens?
 
-Get all repositories of a Github account.
+Get all repositories of a GitHub account.
 Save them to a folder.
 Update already cloned repositories.
 
