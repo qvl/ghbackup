@@ -66,6 +66,8 @@ There are different tools to do this:
 
 ### systemd and sleepto
 
+*Also see [this tutorial](https://jorin.me/automating-github-backup-with-ghbackup/).*
+
 [systemd](https://freedesktop.org/wiki/Software/systemd/) runs on most Linux systems and using [sleepto](https://qvl.io/sleepto) it's easy to create a service to schedule a backup.
 
 - Create a new unit file:
