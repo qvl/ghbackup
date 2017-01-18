@@ -5,5 +5,4 @@ os:
   - linux
   - osx
 after_success:
-  # Only release tag on Linux
-  test "$TRAVIS_OS_NAME" != "osx" && test -n "$TRAVIS_TAG" && go get github.com/goreleaser/goreleaser && goreleaser
+  test "$TRAVIS_OS_NAME" = "linux" -a -n "$TRAVIS_TAG" && go get github.com/goreleaser/goreleaser && goreleaser
