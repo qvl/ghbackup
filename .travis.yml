@@ -4,10 +4,6 @@ go:
 os:
   - linux
   - osx
-matrix:
-  allow_failures:
-    - go: tip
-  fast_finish: true
 after_success:
   # Only release tag on Linux
   test "$TRAVIS_OS_NAME" != "osx" && test -n "$TRAVIS_TAG" && go get github.com/goreleaser/goreleaser && goreleaser
