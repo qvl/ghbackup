@@ -1,5 +1,6 @@
 brew:
-  repo: qvl/brew
+  repo: qvl/homebrew-tap
+  folder: Formula
 build:
   goos:
     - windows
