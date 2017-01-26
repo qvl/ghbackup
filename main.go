@@ -5,7 +5,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"runtime"
 
@@ -68,10 +67,10 @@ func main() {
 		for u := range updates {
 			switch u.Type {
 			case ghbackup.UErr:
-				log.Println(u.Message)
+				fmt.Fprintln(os.Stderr, u.Message)
 			case ghbackup.UInfo:
 				if !*silent {
-					log.Println(u.Message)
+					fmt.Fprintln(os.Stderr, u.Message)
 				}
 			}
 		}
@@ -85,7 +84,7 @@ func main() {
 	})
 
 	if err != nil {
-		log.Println(err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
