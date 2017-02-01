@@ -5,6 +5,9 @@
 [![Go Report Card](https://goreportcard.com/badge/qvl.io/ghbackup)](https://goreportcard.com/report/qvl.io/ghbackup)
 
 
+Backup your GitHub repositories with a simple command-line application written in Go.
+
+
     Embarrassing simple GitHub backup tool
 
     Usage: ghbackup [flags] directory
