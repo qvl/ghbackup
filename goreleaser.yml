@@ -1,5 +1,7 @@
 brew:
-  repo: qvl/homebrew-tap
+  github: 
+    owner: qvl
+    name: homebrew-tap
   folder: Formula
 build:
   goos:
