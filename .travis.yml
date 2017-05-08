@@ -1,8 +1,12 @@
 language: go
+go_import_path: qvl.io/ghbackup
 go:
-  - 1.7.4
+  - 1.8.1
 os:
   - linux
   - osx
-after_success:
-  test "$TRAVIS_OS_NAME" = "linux" -a -n "$TRAVIS_TAG" && go get github.com/goreleaser/goreleaser && goreleaser
+after_success: |
+  test "$TRAVIS_OS_NAME" = "linux" -a -n "$TRAVIS_TAG" \
+  && gem install fpm  \
+  && go get github.com/goreleaser/goreleaser \
+  && goreleaser

@@ -1,10 +1,28 @@
-brew:
-  github: 
-    owner: qvl
-    name: homebrew-tap
-  folder: Formula
+homepage: &homepage https://qvl.io/ghbackup
+description: &description Embarrassingly simple GitHub backup tool
 build:
   goos:
     - windows
     - darwin
     - linux
+archive:
+  format_overrides:
+    - goos: windows
+      format: zip
+  replacements:
+    darwin: mac
+brew:
+  github:
+    owner: qvl
+    name: homebrew-tap
+  folder: Formula
+  homepage: *homepage
+  description: *description
+fpm:
+  homepage: *homepage
+  description: *description
+  maintainer: Jorin Vogel <hi@jorin.me>
+  license: MIT
+  vendor: GoReleaser
+  formats:
+    - deb
