@@ -5,12 +5,24 @@ build:
     - windows
     - darwin
     - linux
+  goarch:
+    - amd64
+    - 386
+    - arm
+    - arm64
 archive:
   format_overrides:
     - goos: windows
       format: zip
+  name_template: "{{.Binary}}_{{.Version}}_{{.Os}}_{{.Arch}}"
   replacements:
+    amd64: 64bit
+    386: 32bit
+    arm: ARM
+    arm64: ARM64
     darwin: mac
+    linux: linux
+    windows: windows
 brew:
   github:
     owner: qvl
