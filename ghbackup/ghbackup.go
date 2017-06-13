@@ -3,15 +3,19 @@
 // This way you can directly use it from any other Go program.
 package ghbackup
 
-import "net/http"
+import (
+	"log"
+	"net/http"
+)
 
 // Config should be passed to Run.
 // Only Account, Dir, Updates are required.
 type Config struct {
 	Account string
 	Dir     string
-	Updates chan Update
 	// Optional:
+	Err     *log.Logger
+	Log     *log.Logger
 	Secret  string
 	API     string
 	Workers int
@@ -23,22 +27,6 @@ type Config struct {
 type Doer interface {
 	Do(*http.Request) (*http.Response, error)
 }
-
-// Update is the format of updates emitted while running.
-type Update struct {
-	Type    UpdateType
-	Message string
-}
-
-// UpdateType helps you to decide what to do with an Update .
-type UpdateType int
-
-const (
-	// UErr occurs when something went wrong, but the backup can keep running.
-	UErr UpdateType = iota
-	// UInfo contains progress information that could be optionally logged.
-	UInfo
-)
 
 type repo struct {
 	Path    string `json:"full_name"`

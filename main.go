@@ -5,6 +5,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
 	"runtime"
 
@@ -61,26 +63,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Log updates
-	updates := make(chan ghbackup.Update)
-	go func() {
-		for u := range updates {
-			switch u.Type {
-			case ghbackup.UErr:
-				fmt.Fprintln(os.Stderr, u.Message)
-			case ghbackup.UInfo:
-				if !*silent {
-					fmt.Fprintln(os.Stderr, u.Message)
-				}
-			}
-		}
-	}()
+	errs := log.New(os.Stderr, "", 0)
+	logs := errs
+	if *silent {
+		logs = log.New(ioutil.Discard, "", 0)
+	}
 
 	err := ghbackup.Run(ghbackup.Config{
 		Account: *account,
 		Dir:     args[0],
 		Secret:  *secret,
-		Updates: updates,
+		Log:     logs,
+		Err:     errs,
 	})
 
 	if err != nil {

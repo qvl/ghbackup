@@ -1,7 +1,8 @@
 package ghbackup
 
 import (
-	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"sync"
 )
@@ -9,6 +10,12 @@ import (
 // Run update for the given Config.
 func Run(config Config) error {
 	// Defaults
+	if config.Log == nil {
+		config.Log = log.New(ioutil.Discard, "", 0)
+	}
+	if config.Err == nil {
+		config.Err = log.New(ioutil.Discard, "", 0)
+	}
 	if config.Workers == 0 {
 		config.Workers = defaultMaxWorkers
 	}
@@ -25,17 +32,16 @@ func Run(config Config) error {
 		return err
 	}
 
-	config.Updates <- Update{UInfo, fmt.Sprintf("%d repositories:", len(repos))}
+	config.Log.Printf("%d repositories:", len(repos))
 
 	// Backup repositories in parallel
 	each(repos, config.Workers, func(r repo) {
-		err := backup(config.Dir, config.Account, config.Secret, r, config.Updates)
-		if err != nil {
-			config.Updates <- Update{UErr, err.Error()}
+		if err := config.backup(r); err != nil {
+			config.Err.Println(err)
 		}
 	})
 
-	config.Updates <- Update{UInfo, "All done."}
+	config.Log.Println("All done.")
 
 	return nil
 }

@@ -1,7 +1,9 @@
 package ghbackup_test
 
 import (
+	"bytes"
 	"io/ioutil"
+	"log"
 	"os"
 	"testing"
 
@@ -14,29 +16,22 @@ func TestRun(t *testing.T) {
 		t.Error(err)
 	}
 	defer func() {
-		err := os.RemoveAll(dir)
-		if err != nil {
+		if err := os.RemoveAll(dir); err != nil {
 			t.Error(err)
 		}
 	}()
 
-	updates := make(chan ghbackup.Update)
-	go func() {
-		for u := range updates {
-			switch u.Type {
-			case ghbackup.UErr:
-				t.Error("Unexpected error:", u.Message)
-			}
-		}
-	}()
-
+	var errs bytes.Buffer
 	err = ghbackup.Run(ghbackup.Config{
 		Account: "qvl",
 		Dir:     dir,
 		Secret:  os.Getenv("SECRET"),
-		Updates: updates,
+		Err:     log.New(&errs, "", log.Lshortfile),
 	})
 
+	if errs.Len() != 0 {
+		t.Error("Unexpected error messages:", errs.String())
+	}
 	if err != nil {
 		t.Error("Unexpected error:", err)
 	}

@@ -10,8 +10,8 @@ import (
 )
 
 // Clone new repo or pull in existing repo
-func backup(backupDir, account, secret string, r repo, updates chan Update) error {
-	repoDir := getRepoDir(backupDir, r.Path, account)
+func (c Config) backup(r repo) error {
+	repoDir := getRepoDir(c.Dir, r.Path, c.Account)
 
 	repoExists, err := exists(repoDir)
 	if err != nil {
@@ -20,12 +20,12 @@ func backup(backupDir, account, secret string, r repo, updates chan Update) erro
 
 	var cmd *exec.Cmd
 	if repoExists {
-		updates <- Update{UInfo, fmt.Sprintf("Updating %s", r.Path)}
+		c.Log.Printf("Updating %s", r.Path)
 		cmd = exec.Command("git", "remote", "update")
 		cmd.Dir = repoDir
 	} else {
-		updates <- Update{UInfo, fmt.Sprintf("Cloning %s", r.Path)}
-		cmd = exec.Command("git", "clone", "--mirror", "--no-checkout", getCloneURL(r, secret), repoDir)
+		c.Log.Printf("Cloning %s", r.Path)
+		cmd = exec.Command("git", "clone", "--mirror", "--no-checkout", getCloneURL(r, c.Secret), repoDir)
 	}
 
 	out, err := cmd.CombinedOutput()
