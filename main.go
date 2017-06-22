@@ -64,7 +64,7 @@ func main() {
 	}
 
 	errs := log.New(os.Stderr, "", 0)
-	logs := errs
+	logs := log.New(os.Stdout, "", 0)
 	if *silent {
 		logs = log.New(ioutil.Discard, "", 0)
 	}
