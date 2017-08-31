@@ -98,8 +98,7 @@ WantedBy=multi-user.target
 - Start service and enable it on boot:
 ``` sh
 sudo systemctl daemon-reload
-sudo systemctl start ghbackup
-sudo systemctl enable ghbackup
+sudo systemctl enable --now ghbackup
 ```
 
 - Check if service is running:
