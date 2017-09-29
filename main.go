@@ -63,18 +63,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	errs := log.New(os.Stderr, "", 0)
-	logs := log.New(os.Stdout, "", 0)
+	logger := log.New(os.Stdout, "", 0)
 	if *silent {
-		logs = log.New(ioutil.Discard, "", 0)
+		logger = log.New(ioutil.Discard, "", 0)
 	}
 
 	err := ghbackup.Run(ghbackup.Config{
 		Account: *account,
 		Dir:     args[0],
 		Secret:  *secret,
-		Log:     logs,
-		Err:     errs,
+		Log:     logger,
+		Err:     log.New(os.Stderr, "", 0),
 	})
 
 	if err != nil {
