@@ -7,6 +7,14 @@
 
 Backup your GitHub repositories with a simple command-line application written in Go.
 
+The simplest way to keep your repositories save:
+
+1. [Install](#install) `ghbackup`
+1. Get a token from https://github.com/settings/tokens
+2. `ghbackup -secret token /path/to/backup/dir`
+
+This will backup all repositories you have access to.
+
 
     Embarrassing simple GitHub backup tool
 
@@ -33,15 +41,6 @@ Backup your GitHub repositories with a simple command-line application written i
             Print binary version
 
     For more visit https://qvl.io/ghbackup.
-
-
-The simplest way to keep your repositories save:
-
-1. [Install](#install) `ghbackup`
-1. Get a token from https://github.com/settings/tokens
-2. `ghbackup -secret token /path/to/backup/dir`
-
-This will backup all repositories you have access to.
 
 
 ## Install
