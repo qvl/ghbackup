@@ -2,10 +2,12 @@ package ghbackup_test
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -28,11 +30,12 @@ func TestRun(t *testing.T) {
 		}
 	}()
 
-	var errs bytes.Buffer
+	var logs, errs bytes.Buffer
 	err = ghbackup.Run(ghbackup.Config{
 		Account: "qvl",
 		Dir:     dir,
 		Secret:  os.Getenv("SECRET"),
+		Log:     log.New(&logs, "", 0),
 		Err:     log.New(&errs, "", log.Lshortfile),
 	})
 
@@ -43,14 +46,32 @@ func TestRun(t *testing.T) {
 		t.Error("Unexpected error:", err)
 	}
 
+	// Check log output to be of the following form:
+	//   6 repositories:
+	//   Cloning qvl/ghbackup
+	//   Cloning qvl/slangbrain.com
+	//   Cloning qvl/qvl.io
+	//   Cloning qvl/sleepto
+	//   Cloning qvl/promplot
+	//   Cloning qvl/homebrew-tap
+	//   done: 6 new, 0 updated, 0 unchanged, 3979 total objects
+	lines := strings.Split(logs.String(), "\n")
+	countFirstLine, err := strconv.Atoi(strings.Split(lines[0], " ")[0])
+	if err != nil {
+		t.Errorf("Cannot parse repository count from first line of output: '%s'", lines[0])
+	}
+	if !strings.HasPrefix(lines[countFirstLine+1], fmt.Sprintf("done: %d new, 0 updated, 0 unchanged, ", countFirstLine)) {
+		t.Errorf("Last line contains unexpected status information: '%s'", lines[countFirstLine+1])
+	}
+
 	// Check contents of backup directory
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		t.Error(err)
 	}
-	minLen := len(strings.Split(strings.TrimSpace(expectedRepos), " "))
-	if len(files) < minLen {
-		t.Errorf("Expected to fetch at least %d repositories; got %d", minLen, len(files))
+	minRepos := len(strings.Split(strings.TrimSpace(expectedRepos), " "))
+	if len(files) < minRepos {
+		t.Errorf("Expected to fetch at least %d repositories; got %d", minRepos, len(files))
 	}
 
 	for _, f := range files {

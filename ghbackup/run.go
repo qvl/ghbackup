@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"sync"
 )
 
 // Run update for the given Config.
@@ -34,14 +33,43 @@ func Run(config Config) error {
 
 	config.Log.Printf("%d repositories:", len(repos))
 
-	// Backup repositories in parallel
-	each(repos, config.Workers, func(r repo) {
-		if err := config.backup(r); err != nil {
-			config.Err.Println(err)
-		}
+	results := make(chan struct {
+		count int
+		new   bool
 	})
 
-	config.Log.Println("All done.")
+	// Backup repositories in parallel
+	go each(repos, config.Workers, func(r repo) {
+		objectCount, isNew, err := config.backup(r)
+		if err != nil {
+			config.Err.Println(err)
+		}
+		results <- struct {
+			count int
+			new   bool
+		}{count: objectCount, new: isNew}
+	})
+
+	var creations, updates, count int
+
+	for i := 0; i < len(repos); i++ {
+		r := <-results
+		if r.new {
+			creations++
+		} else {
+			updates++
+		}
+		count += r.count
+	}
+	close(results)
+
+	config.Log.Printf(
+		"done: %d new, %d updated, %d unchanged, %d total objects\n",
+		creations,
+		updates,
+		len(repos)-creations-updates,
+		count,
+	)
 
 	return nil
 }
@@ -53,12 +81,8 @@ func each(repos []repo, workers int, worker func(repo)) {
 
 	jobs := make(chan repo)
 
-	var wg sync.WaitGroup
-	wg.Add(workers)
-
 	for w := 0; w < workers; w++ {
 		go func() {
-			defer wg.Done()
 			for r := range jobs {
 				worker(r)
 			}
@@ -69,5 +93,4 @@ func each(repos []repo, workers int, worker func(repo)) {
 		jobs <- r
 	}
 	close(jobs)
-	wg.Wait()
 }
