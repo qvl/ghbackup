@@ -14,7 +14,7 @@ import (
 
 const (
 	expectedRepos = " ghbackup homebrew-tap promplot qvl.io slangbrain.com sleepto "
-	gitFiles      = "HEAD config description hooks info objects packed-refs refs"
+	gitFiles      = " HEAD branches config description hooks info objects packed-refs refs "
 )
 
 func TestRun(t *testing.T) {
@@ -63,13 +63,13 @@ func TestRun(t *testing.T) {
 			t.Error(err)
 		}
 
-		var rs []string
-		for _, r := range repoFiles {
-			rs = append(rs, r.Name())
+		if len(repoFiles) < 8 {
+			t.Errorf("Expected repository %s to contain at least 8 files; found %d", f.Name(), len(repoFiles))
 		}
-		s := strings.Join(rs, " ")
-		if s != gitFiles {
-			t.Errorf("Expected repository for '%s' to contain:\n'%s'\nbut got:\n'%s'", f.Name(), gitFiles, s)
+		for _, r := range repoFiles {
+			if !strings.Contains(gitFiles, " "+r.Name()+" ") {
+				t.Errorf("Expected repo %s to contain only files '%s'; found '%s'", f.Name(), gitFiles, r.Name())
+			}
 		}
 	}
 }
