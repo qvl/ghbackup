@@ -126,6 +126,18 @@ For example:
 0 1 * * * ghbackup -account qvl /home/qvl/backup-qvl
 ```
 
+### Sending statistics
+
+The last line of the output contains a summary.
+You can use this to collect statistics about your backups.
+An easy way would be to use a [Slack hook](https://api.slack.com/incoming-webhooks) and send it like this:
+
+```sh
+ghbackup -secret $GITHUB_TOKEN DIR \
+  | tail -n1 \
+  | xargs -I%% curl -s -X POST --data-urlencode 'payload={"text": "%%"}' $SLACK_HOOK
+```
+
 
 ## What happens?
 
