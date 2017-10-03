@@ -1,7 +1,7 @@
 language: go
 go_import_path: qvl.io/ghbackup
 go:
-  - 1.8.1
+  - 1.9
 os:
   - linux
   - osx

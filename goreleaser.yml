@@ -1,5 +1,3 @@
-homepage: &homepage https://qvl.io/ghbackup
-description: &description Embarrassingly simple GitHub backup tool
 build:
   goos:
     - windows
@@ -28,13 +26,15 @@ brew:
     owner: qvl
     name: homebrew-tap
   folder: Formula
-  homepage: *homepage
-  description: *description
+  homepage: https://qvl.io/ghbackup
+  description: Embarrassingly simple GitHub backup tool
 fpm:
-  homepage: *homepage
-  description: *description
+  homepage: https://qvl.io/ghbackup
+  description: Embarrassingly simple GitHub backup tool
   maintainer: Jorin Vogel <hi@jorin.me>
   license: MIT
-  vendor: GoReleaser
+  vendor: qvl
   formats:
     - deb
+  dependencies:
+    - git
