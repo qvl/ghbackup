@@ -24,7 +24,7 @@ func (c Config) backup(r repo) (int, bool, error) {
 	var cmd *exec.Cmd
 	if repoExists {
 		c.Log.Printf("Updating %s", r.Path)
-		cmd = exec.Command("git", "remote", "update", "--progress")
+		cmd = exec.Command("git", "remote", "update")
 		cmd.Dir = repoDir
 	} else {
 		c.Log.Printf("Cloning %s", r.Path)
