@@ -54,10 +54,12 @@ func Run(config Config) error {
 
 	for i := 0; i < len(repos); i++ {
 		r := <-results
-		if r.new {
-			creations++
-		} else {
-			updates++
+		if r.count > 0 {
+			if r.new {
+				creations++
+			} else {
+				updates++
+			}
 		}
 		count += r.count
 	}
