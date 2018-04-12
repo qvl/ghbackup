@@ -1,13 +1,13 @@
-build:
-  goos:
-    - windows
-    - darwin
-    - linux
-  goarch:
-    - amd64
-    - 386
-    - arm
-    - arm64
+builds:
+  - goos:
+      - windows
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - 386
+      - arm
+      - arm64
 archive:
   format_overrides:
     - goos: windows
@@ -28,7 +28,7 @@ brew:
   folder: Formula
   homepage: https://qvl.io/ghbackup
   description: Embarrassingly simple GitHub backup tool
-fpm:
+nfpm:
   homepage: https://qvl.io/ghbackup
   description: Embarrassingly simple GitHub backup tool
   maintainer: Jorin Vogel <hi@jorin.me>
