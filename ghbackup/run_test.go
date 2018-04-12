@@ -54,13 +54,13 @@ func TestRun(t *testing.T) {
 	//   Cloning qvl/sleepto
 	//   Cloning qvl/promplot
 	//   Cloning qvl/homebrew-tap
-	//   done: 6 new, 0 updated, 0 unchanged, 3979 total objects
+	//   done: 6 new, 0 updated, 0 unchanged
 	lines := strings.Split(logs.String(), "\n")
 	countFirstLine, err := strconv.Atoi(strings.Split(lines[0], " ")[0])
 	if err != nil {
 		t.Errorf("Cannot parse repository count from first line of output: '%s'", lines[0])
 	}
-	if !strings.HasPrefix(lines[countFirstLine+1], fmt.Sprintf("done: %d new, 0 updated, 0 unchanged, ", countFirstLine)) {
+	if lines[countFirstLine+1] != fmt.Sprintf("done: %d new, 0 updated, 0 unchanged", countFirstLine) {
 		t.Errorf("Last line contains unexpected status information: '%s'", lines[countFirstLine+1])
 	}
 

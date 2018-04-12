@@ -7,18 +7,25 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 )
 
+type repoState int
+
+const (
+	stateNew = iota
+	stateChanged
+	stateUnchanged
+)
+
 // Clone new repo or pull in existing repo.
-// Returns the count of objects fetched and a boolean indicating if the repository is new.
-func (c Config) backup(r repo) (int, bool, error) {
+// Returns state of repo.
+func (c Config) backup(r repo) (repoState, error) {
 	repoDir := getRepoDir(c.Dir, r.Path, c.Account)
 
 	repoExists, err := exists(repoDir)
 	if err != nil {
-		return 0, false, fmt.Errorf("cannot check if repo exists: %v", err)
+		return stateUnchanged, fmt.Errorf("cannot check if repo exists: %v", err)
 	}
 
 	var cmd *exec.Cmd
@@ -33,10 +40,10 @@ func (c Config) backup(r repo) (int, bool, error) {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return 0, false, fmt.Errorf("error running command %v (%v): %v (%v)", cmd.Args, cmd.Path, string(out), err)
+		return stateUnchanged, fmt.Errorf("error running command %v (%v): %v (%v)", cmd.Args, cmd.Path, string(out), err)
 	}
 
-	return gitObjectCount(string(out)), !repoExists, nil
+	return gitState(repoExists, string(out)), nil
 }
 
 func getRepoDir(backupDir, repoPath, account string) string {
@@ -75,32 +82,13 @@ func getCloneURL(r repo, secret string) string {
 	return u.String()
 }
 
-// Get the object count from git output.
-// Returns 0 if parsing failed.
-// Works for `clone` and `remote update` with output like this:
-//
-// Cloning into bare repository 'ghbackup.git'...
-// remote: Counting objects: 334, done.
-// remote: Total 334 (delta 0), reused 0 (delta 0), pack-reused 334
-// Receiving objects: 100% (334/334), 55.41 KiB | 209.00 KiB/s, done.
-// Resolving deltas: 100% (172/172), done.
-
-// Fetching origin
-// remote: Counting objects: 5, done.
-// remote: Total 5 (delta 3), reused 3 (delta 3), pack-reused 2
-// Unpacking objects: 100% (5/5), done.
-func gitObjectCount(out string) int {
-	lines := strings.Split(out, "\n")
-	if len(lines) < 2 {
-		return 0
+// Get the state of a repo from command output.
+func gitState(repoExisted bool, out string) repoState {
+	if !repoExisted {
+		return stateNew
 	}
-	fields := strings.Split(lines[1], " ")
-	if len(fields) < 4 {
-		return 0
+	if lines := strings.Split(out, "\n"); len(lines) > 2 {
+		return stateChanged
 	}
-	count, err := strconv.Atoi(strings.TrimSuffix(fields[3], ","))
-	if err != nil {
-		return 0
-	}
-	return count
+	return stateUnchanged
 }

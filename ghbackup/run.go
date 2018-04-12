@@ -33,44 +33,36 @@ func Run(config Config) error {
 
 	config.Log.Printf("%d repositories:", len(repos))
 
-	results := make(chan struct {
-		count int
-		new   bool
-	})
+	results := make(chan repoState)
 
 	// Backup repositories in parallel
 	go each(repos, config.Workers, func(r repo) {
-		objectCount, isNew, err := config.backup(r)
+		state, err := config.backup(r)
 		if err != nil {
 			config.Err.Println(err)
 		}
-		results <- struct {
-			count int
-			new   bool
-		}{count: objectCount, new: isNew}
+		results <- state
 	})
 
-	var creations, updates, count int
+	var creations, updates, unchanged int
 
 	for i := 0; i < len(repos); i++ {
-		r := <-results
-		if r.count > 0 {
-			if r.new {
-				creations++
-			} else {
-				updates++
-			}
+		state := <-results
+		if state == stateNew {
+			creations++
+		} else if state == stateChanged {
+			updates++
+		} else {
+			unchanged++
 		}
-		count += r.count
 	}
 	close(results)
 
 	config.Log.Printf(
-		"done: %d new, %d updated, %d unchanged, %d total objects\n",
+		"done: %d new, %d updated, %d unchanged",
 		creations,
 		updates,
-		len(repos)-creations-updates,
-		count,
+		unchanged,
 	)
 
 	return nil
