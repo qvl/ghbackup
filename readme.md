@@ -48,6 +48,8 @@ This will backup all repositories you have access to.
 
 ## Install
 
+- Note that `ghbackup` uses `git` under the hood. Please make sure it is installed on your system.
+
 - With [Go](https://golang.org/):
 ```
 go get qvl.io/ghbackup
