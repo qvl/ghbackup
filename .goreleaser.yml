@@ -28,6 +28,8 @@ brew:
   folder: Formula
   homepage: https://qvl.io/ghbackup
   description: Embarrassingly simple GitHub backup tool
+  dependencies:
+    - git
 nfpm:
   homepage: https://qvl.io/ghbackup
   description: Embarrassingly simple GitHub backup tool
