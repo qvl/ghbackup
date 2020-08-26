@@ -50,15 +50,17 @@ func Run(config Config) error {
 		state, err := config.backup(r)
 		for {
 			if err != nil {
-				config.Err.Println(err)
 				sleepDuration := eBackoff.NextBackOff()
 				if sleepDuration == backoff.Stop {
+					config.Log.Printf("repository %v failed to get cloned: %v", r, err)
 					break
 				}
+				config.Err.Println(err)
 				time.Sleep(sleepDuration)
 				state, err = config.backup(r)
 				continue
 			}
+			config.Log.Printf("repository %v managed to get cloned successfully", r)
 			break
 		}
 		results <- state
