@@ -16,6 +16,7 @@ const (
 	stateNew = iota
 	stateChanged
 	stateUnchanged
+	stateFailed
 )
 
 // Clone new repo or pull in existing repo.
@@ -25,7 +26,7 @@ func (c Config) backup(r repo) (repoState, error) {
 
 	repoExists, err := exists(repoDir)
 	if err != nil {
-		return stateUnchanged, fmt.Errorf("cannot check if repo exists: %v", err)
+		return stateFailed, fmt.Errorf("cannot check if repo exists: %v", err)
 	}
 
 	var cmd *exec.Cmd
@@ -40,7 +41,7 @@ func (c Config) backup(r repo) (repoState, error) {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return stateUnchanged, fmt.Errorf("error running command %v (%v): %v (%v)", cmd.Args, cmd.Path, string(out), err)
+		return stateFailed, fmt.Errorf("error running command %v (%v): %v (%v)", cmd.Args, cmd.Path, string(out), err)
 	}
 
 	return gitState(repoExists, string(out)), nil

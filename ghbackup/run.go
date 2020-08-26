@@ -1,10 +1,19 @@
 package ghbackup
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
+
+	"github.com/cenkalti/backoff"
 )
+
+func newExponentialBackOff() *backoff.ExponentialBackOff {
+	b := backoff.NewExponentialBackOff()
+	return b
+}
 
 // Run update for the given Config.
 func Run(config Config) error {
@@ -35,16 +44,27 @@ func Run(config Config) error {
 
 	results := make(chan repoState)
 
-	// Backup repositories in parallel
+	// Backup repositories in parallel with exponential-backoff retries
 	go each(repos, config.Workers, func(r repo) {
+		eBackoff := newExponentialBackOff()
 		state, err := config.backup(r)
-		if err != nil {
-			config.Err.Println(err)
+		for {
+			if err != nil {
+				config.Err.Println(err)
+				sleepDuration := eBackoff.NextBackOff()
+				if sleepDuration == backoff.Stop {
+					break
+				}
+				time.Sleep(sleepDuration)
+				state, err = config.backup(r)
+				continue
+			}
+			break
 		}
 		results <- state
 	})
 
-	var creations, updates, unchanged int
+	var creations, updates, unchanged, failed int
 
 	for i := 0; i < len(repos); i++ {
 		state := <-results
@@ -52,8 +72,10 @@ func Run(config Config) error {
 			creations++
 		} else if state == stateChanged {
 			updates++
-		} else {
+		} else if state == stateUnchanged {
 			unchanged++
+		} else {
+			failed++
 		}
 	}
 	close(results)
@@ -64,7 +86,9 @@ func Run(config Config) error {
 		updates,
 		unchanged,
 	)
-
+	if failed > 0 {
+		return fmt.Errorf("failed to get %d repositories", failed)
+	}
 	return nil
 }
 
