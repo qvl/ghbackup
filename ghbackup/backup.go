@@ -50,7 +50,7 @@ func maskSecrets(values, secrets []string) []string {
 	out := make([]string, len(values))
 	for _, secret := range secrets {
 		for vIndex, value := range values {
-			out[vIndex] = strings.ReplaceAll(value, secret, "###")
+			out[vIndex] = strings.Replace(value, secret, "###", -1)
 		}
 	}
 	return out
