@@ -40,6 +40,11 @@ func (c Config) backup(r repo) (repoState, error) {
 	}
 	out, err := cmd.CombinedOutput()
 	if err != nil {
+		if !repoExists {
+			// clean up clone dir after a failed clone
+			// if it was a clean clone only
+			_ = os.RemoveAll(repoDir)
+		}
 		return stateFailed, fmt.Errorf("error running command %v (%v): %v (%v)", maskSecrets(cmd.Args, []string{c.Secret}), cmd.Path, string(out), err)
 	}
 	return gitState(repoExists, string(out)), nil
