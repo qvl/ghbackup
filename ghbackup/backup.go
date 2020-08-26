@@ -38,13 +38,22 @@ func (c Config) backup(r repo) (repoState, error) {
 		c.Log.Printf("Cloning %s", r.Path)
 		cmd = exec.Command("git", "clone", "--mirror", "--no-checkout", "--progress", getCloneURL(r, c.Secret), repoDir)
 	}
-
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return stateFailed, fmt.Errorf("error running command %v (%v): %v (%v)", cmd.Args, cmd.Path, string(out), err)
+		return stateFailed, fmt.Errorf("error running command %v (%v): %v (%v)", maskSecrets(cmd.Args, []string{c.Secret}), cmd.Path, string(out), err)
 	}
-
 	return gitState(repoExists, string(out)), nil
+}
+
+// maskSecrets hides sensitive data
+func maskSecrets(values, secrets []string) []string {
+	out := make([]string, len(values))
+	for _, secret := range secrets {
+		for vIndex, value := range values {
+			out[vIndex] = strings.ReplaceAll(value, secret, "###")
+		}
+	}
+	return out
 }
 
 func getRepoDir(backupDir, repoPath, account string) string {
