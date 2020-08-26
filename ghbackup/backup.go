@@ -53,8 +53,11 @@ func (c Config) backup(r repo) (repoState, error) {
 // maskSecrets hides sensitive data
 func maskSecrets(values, secrets []string) []string {
 	out := make([]string, len(values))
+	for vIndex, value := range values {
+		out[vIndex] = value
+	}
 	for _, secret := range secrets {
-		for vIndex, value := range values {
+		for vIndex, value := range out {
 			out[vIndex] = strings.Replace(value, secret, "###", -1)
 		}
 	}
