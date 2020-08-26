@@ -12,7 +12,7 @@ import (
 
 func newExponentialBackOff() *backoff.ExponentialBackOff {
 	b := backoff.NewExponentialBackOff()
-	b.InitialInterval = 10 * time.Second
+	b.InitialInterval = 1 * time.Second
 	b.MaxElapsedTime = 5 * time.Minute
 	return b
 }
