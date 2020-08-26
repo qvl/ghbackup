@@ -60,7 +60,6 @@ func Run(config Config) error {
 				state, err = config.backup(r)
 				continue
 			}
-			config.Log.Printf("repository %v managed to get cloned successfully", r)
 			break
 		}
 		results <- state
