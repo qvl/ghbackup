@@ -6,16 +6,7 @@ import (
 	"log"
 	"net/http"
 	"time"
-
-	"github.com/cenkalti/backoff"
 )
-
-func newExponentialBackOff() *backoff.ExponentialBackOff {
-	b := backoff.NewExponentialBackOff()
-	b.InitialInterval = 1 * time.Second
-	b.MaxElapsedTime = 5 * time.Minute
-	return b
-}
 
 // Run update for the given Config.
 func Run(config Config) error {
@@ -48,17 +39,15 @@ func Run(config Config) error {
 
 	// Backup repositories in parallel with exponential-backoff retries
 	go each(repos, config.Workers, func(r repo) {
-		eBackoff := newExponentialBackOff()
 		state, err := config.backup(r)
-		for {
+		for _, sleepDuration := range []time.Duration{5, 15, 45, 90, 180, -1} {
 			if err != nil {
-				sleepDuration := eBackoff.NextBackOff()
-				if sleepDuration == backoff.Stop {
+				if sleepDuration == -1 {
 					config.Log.Printf("repository %v failed to get cloned: %v", r, err)
 					break
 				}
 				config.Err.Println(err)
-				time.Sleep(sleepDuration)
+				time.Sleep(sleepDuration * time.Second)
 				state, err = config.backup(r)
 				continue
 			}
