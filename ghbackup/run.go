@@ -37,7 +37,7 @@ func Run(config Config) error {
 
 	results := make(chan repoState)
 
-	// Backup repositories in parallel with exponential-backoff retries
+	// Backup repositories in parallel with retries
 	go each(repos, config.Workers, func(r repo) {
 		state, err := config.backup(r)
 		for _, sleepDuration := range []time.Duration{5, 15, 45, 90, 180, -1} {
