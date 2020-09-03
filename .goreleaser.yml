@@ -1,4 +1,6 @@
 builds:
+  - env:
+      - CGO_ENABLED=0
   - goos:
       - windows
       - darwin
@@ -8,8 +10,11 @@ builds:
       - 386
       - arm
       - arm64
-archive:
-  format_overrides:
+    ignore:
+      - goos: darwin
+        goarch: 386
+archives:
+- format_overrides:
     - goos: windows
       format: zip
   name_template: "{{.Binary}}_{{.Version}}_{{.Os}}_{{.Arch}}"
@@ -21,8 +26,8 @@ archive:
     darwin: mac
     linux: linux
     windows: windows
-brew:
-  github:
+brews:
+- tap:
     owner: qvl
     name: homebrew-tap
   folder: Formula
@@ -30,13 +35,14 @@ brew:
   description: Embarrassingly simple GitHub backup tool
   dependencies:
     - git
-nfpm:
-  homepage: https://qvl.io/ghbackup
+nfpms:
+- homepage: https://qvl.io/ghbackup
   description: Embarrassingly simple GitHub backup tool
   maintainer: Jorin Vogel <hi@jorin.me>
   license: MIT
   vendor: qvl
   formats:
     - deb
+    - rpm
   dependencies:
     - git
