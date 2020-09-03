@@ -1,18 +1,18 @@
 builds:
-  - env:
-      - CGO_ENABLED=0
-  - goos:
-      - windows
-      - darwin
-      - linux
-    goarch:
-      - amd64
-      - 386
-      - arm
-      - arm64
-    ignore:
-      - goos: darwin
-        goarch: 386
+- env:
+    - CGO_ENABLED=0
+  goos:
+    - windows
+    - darwin
+    - linux
+  goarch:
+    - amd64
+    - 386
+    - arm
+    - arm64
+  ignore:
+    - goos: darwin
+      goarch: 386
 archives:
 - format_overrides:
     - goos: windows
