@@ -16,6 +16,7 @@ const (
 	stateNew = iota
 	stateChanged
 	stateUnchanged
+	stateFailed
 )
 
 // Clone new repo or pull in existing repo.
@@ -25,7 +26,7 @@ func (c Config) backup(r repo) (repoState, error) {
 
 	repoExists, err := exists(repoDir)
 	if err != nil {
-		return stateUnchanged, fmt.Errorf("cannot check if repo exists: %v", err)
+		return stateFailed, fmt.Errorf("cannot check if repo exists: %v", err)
 	}
 
 	var cmd *exec.Cmd
@@ -37,13 +38,30 @@ func (c Config) backup(r repo) (repoState, error) {
 		c.Log.Printf("Cloning %s", r.Path)
 		cmd = exec.Command("git", "clone", "--mirror", "--no-checkout", "--progress", getCloneURL(r, c.Secret), repoDir)
 	}
-
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return stateUnchanged, fmt.Errorf("error running command %v (%v): %v (%v)", cmd.Args, cmd.Path, string(out), err)
+		if !repoExists {
+			// clean up clone dir after a failed clone
+			// if it was a clean clone only
+			_ = os.RemoveAll(repoDir)
+		}
+		return stateFailed, fmt.Errorf("error running command %v (%v): %v (%v)", maskSecrets(cmd.Args, []string{c.Secret}), cmd.Path, string(out), err)
 	}
-
 	return gitState(repoExists, string(out)), nil
+}
+
+// maskSecrets hides sensitive data
+func maskSecrets(values, secrets []string) []string {
+	out := make([]string, len(values))
+	for vIndex, value := range values {
+		out[vIndex] = value
+	}
+	for _, secret := range secrets {
+		for vIndex, value := range out {
+			out[vIndex] = strings.Replace(value, secret, "###", -1)
+		}
+	}
+	return out
 }
 
 func getRepoDir(backupDir, repoPath, account string) string {
