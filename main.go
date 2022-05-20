@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"strings"
 
 	"qvl.io/ghbackup/ghbackup"
 )
@@ -34,6 +35,7 @@ Flags:
 	secretUsage = `Authentication secret for GitHub API.
 	Can use the users password or a personal access token (https://github.com/settings/tokens).
 	Authentication increases rate limiting (https://developer.github.com/v3/#rate-limiting) and enables backup of private repositories.`
+	skipUsage = `Skip backup those repos like repo-a,repo-b,repo-c.`
 )
 
 // Get command line arguments and start updating repositories
@@ -41,6 +43,7 @@ func main() {
 	// Flags
 	account := flag.String("account", "", accountUsage)
 	secret := flag.String("secret", "", secretUsage)
+	skip := flag.String("skip", "", skipUsage)
 	versionFlag := flag.Bool("version", false, "Print binary version")
 	silent := flag.Bool("silent", false, "Suppress all output")
 
@@ -71,6 +74,7 @@ func main() {
 	err := ghbackup.Run(ghbackup.Config{
 		Account: *account,
 		Dir:     args[0],
+		Skip:    strings.Split(*skip, ","),
 		Secret:  *secret,
 		Log:     logger,
 		Err:     log.New(os.Stderr, "", 0),

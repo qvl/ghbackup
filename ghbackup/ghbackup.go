@@ -13,6 +13,7 @@ import (
 type Config struct {
 	Account string
 	Dir     string
+	Skip    []string
 	// Optional:
 	Err     *log.Logger
 	Log     *log.Logger

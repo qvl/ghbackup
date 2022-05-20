@@ -10,7 +10,7 @@ import (
 
 // Get repositories from Github.
 // Follow all "next" links.
-func fetch(account, secret, api string, doer Doer) ([]repo, error) {
+func fetch(account, secret, api string, skipRepos map[string]bool, doer Doer) ([]repo, error) {
 	var allRepos []repo
 
 	currentURL, err := getURL(account, secret, api, doer)
@@ -45,7 +45,7 @@ func fetch(account, secret, api string, doer Doer) ([]repo, error) {
 			return nil, fmt.Errorf("cannot decode JSON response: %v", err)
 		}
 
-		allRepos = append(allRepos, selectRepos(repos, account)...)
+		allRepos = append(allRepos, selectRepos(repos, skipRepos, account)...)
 
 		// Set url for next iteration
 		currentURL = getNextURL(res.Header)
@@ -104,15 +104,17 @@ func getCategory(account, api string, doer Doer) (string, error) {
 	return "", fmt.Errorf("unknown type of account %s for %s", a.Type, account)
 }
 
-func selectRepos(repos []repo, account string) []repo {
-	if account == "" {
-		return repos
-	}
+func selectRepos(repos []repo, skipRepos map[string]bool, account string) []repo {
+	filterAccount := account != ""
 	var res []repo
 	for _, r := range repos {
-		if path.Dir(r.Path) == account {
-			res = append(res, r)
+		if skipRepos[path.Base(r.Path)] {
+			continue
 		}
+		if filterAccount && path.Dir(r.Path) != account {
+			continue
+		}
+		res = append(res, r)
 	}
 	return res
 }

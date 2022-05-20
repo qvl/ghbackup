@@ -27,8 +27,13 @@ func Run(config Config) error {
 		config.Doer = http.DefaultClient
 	}
 
+	skipRepos := make(map[string]bool)
+	for _, repo := range config.Skip {
+		skipRepos[repo] = true
+	}
+
 	// Fetch list of repositories
-	repos, err := fetch(config.Account, config.Secret, config.API, config.Doer)
+	repos, err := fetch(config.Account, config.Secret, config.API, skipRepos, config.Doer)
 	if err != nil {
 		return err
 	}
